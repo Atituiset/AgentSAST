@@ -1,0 +1,17 @@
+[book]
+title = "AgentSAST"
+description = "AI-Augmented Static Analysis for C/C++"
+authors = ["AgentSAST Team"]
+language = "zh-CN"
+src = "src"
+
+[build]
+build-dir = "dist"
+
+[output.html]
+default-theme = "navy"
+git-repository-url = "https://github.com/atituiset/AgentSAST"
+edit-url-template = "https://github.com/atituiset/AgentSAST/edit/main/book/src/{path}"
+
+[output.html.search]
+limit-results = 20
