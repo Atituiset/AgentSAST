@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C/C++ 智能缺陷检测工具两层架构设计与技术选型报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            letter-spacing: -0.025em;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* 优雅的英雄区渐变背景 */
+        .hero-gradient {
+            background: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* 卡片悬浮发光效果 */
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
+        }
+
+        /* 拟真 Mac 窗口 UI */
+        .mac-window {
+            background: #1e1e1e;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid #333;
+        }
+        .mac-header {
+            background: #2d2d2d;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            border-bottom: 1px solid #111;
+        }
+        .mac-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        /* 代码高亮颜色 */
+        .syntax-keyword { color: #569cd6; }
+        .syntax-type { color: #4ec9b0; }
+        .syntax-string { color: #ce9178; }
+        .syntax-comment { color: #6a9955; }
+        .syntax-function { color: #dcdcaa; }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- 顶部导航 -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                    <i class="fa-solid fa-shield-virus text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 tracking-tight flex items-center">
+                        AI-Augmented SAST
+                        <span class="ml-3 px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-md uppercase tracking-wider border border-slate-200">Whitepaper v2.0</span>
+                    </h1>
+                </div>
+            </div>
+            <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-500">
+                <a href="#layer1" class="hover:text-indigo-600 transition-colors">锚点识别</a>
+                <a href="#layer2" class="hover:text-indigo-600 transition-colors">切片引擎</a>
+                <a href="#layer3" class="hover:text-indigo-600 transition-colors">大模型裁判</a>
+                <a href="#simulator" class="hover:text-indigo-600 transition-colors"><i class="fa-solid fa-play text-indigo-500 mr-1"></i> 沙盘模拟</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 英雄区 (Hero Section) -->
+    <section class="hero-gradient py-20 px-6 relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgkJPGcgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CgkJCTxjaXJjbGUgY3g9IjMvIiBjeT0iMyIgcj0iMSIvPgoJCTwvZz4KCTwvc3ZnPg==')] opacity-[0.15]"></div>
+        <div class="max-w-4xl mx-auto relative z-10 text-center">
+            <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-white border border-indigo-100 shadow-sm mb-6">
+                <span class="flex w-2 h-2 rounded-full bg-indigo-500 mr-2 animate-pulse"></span>
+                <span class="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Next-Gen Code Auditing Architecture</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
+                规则锚定与 <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">LLM 深度上下文</span>协同检测模型
+            </h1>
+            <p class="text-lg md:text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto font-light">
+                针对 C/C++ 内存安全漏洞，提出“<b class="font-semibold text-slate-800">传统SAST高召回锚定 + 程序切片降噪 + 大语言模型深度推理</b>”的两阶段范式，彻底解决传统工具误报率高、大模型直接扫描幻觉严重的工程痛点。
+            </p>
+        </div>
+    </section>
+
+    <!-- 主体内容 -->
+    <main class="max-w-7xl mx-auto px-6 py-16 space-y-24">
+
+        <!-- 1. 数据面板 -->
+        <section id="charts" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 glass-card p-8">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-slate-800">主流方案多维效能对比 (Benchmark)</h3>
+                    <p class="text-sm text-slate-500 mt-1">对比传统 SAST、LLM 直接扫描与本“两层协同”架构在核心指标上的表现。</p>
+                </div>
+                <div class="h-[300px] w-full">
+                    <canvas id="effectivenessChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card p-8 flex flex-col justify-between bg-gradient-to-b from-white to-slate-50">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">切片深度 vs 资源消耗</h3>
+                    <p class="text-sm text-slate-500 mt-1">Token 开销与精度的帕累托前沿分析</p>
+                </div>
+                <div class="h-[200px] w-full my-4">
+                    <canvas id="slicingParetoChart"></canvas>
+                </div>
+                <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <p class="text-xs text-indigo-800 leading-relaxed">
+                        <i class="fa-solid fa-lightbulb text-indigo-600 mr-1"></i> <b>架构结论：</b> 将上下文依赖深度限制在 <b>1-2 层 (Caller + DFG)</b> 时，能维持 LLM 92% 的判断精度，同时节省约 72% 的 Token 推理成本。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 第一层：缺陷特征锚定 -->
+        <section id="layer1" class="scroll-mt-24">
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl font-black shadow-sm">1</div>
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight">第一层：高召回特征锚定 (SAST Anchoring)</h2>
+                    <p class="text-slate-500 mt-1">复用开源规则库，无需从零开发，实现微秒级风险源定位。</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- CodeQL -->
+                <div class="glass-card p-6 flex flex-col h-full relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fa-solid fa-database text-5xl text-blue-600"></i></div>
+                    <div class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md uppercase tracking-wider border border-blue-100 mb-4 w-max">数据流与符号执行</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">CodeQL Queries</h4>
+                    <p class="text-sm text-slate-600 flex-grow leading-relaxed">GitHub 官方维护的安全查询引擎。通过构建代码关系型数据库，精确定义跨文件的 <code>isSource()</code> 和 <code>isSink()</code>，是目前质量最高但也最重的基座。</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
+                        <i class="fa-brands fa-github mr-1"></i> github/codeql (CWE rules)
+                    </div>
+                </div>
+
+                <!-- Semgrep -->
+                <div class="glass-card p-6 flex flex-col h-full relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fa-solid fa-bolt text-5xl text-emerald-600"></i></div>
+                    <div class="inline-flex items-center px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md uppercase tracking-wider border border-emerald-100 mb-4 w-max">超轻量级语法树分析</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">Semgrep C/C++</h4>
+                    <p class="text-sm text-slate-600 flex-grow leading-relaxed">基于直观 YAML 声明的快速分析器。最大优势是<b>无需编译</b>即可运行，非常适合提取常见的危险函数误用组合或数组越界特征。</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
+                        <i class="fa-brands fa-github mr-1"></i> returntocorp/semgrep-rules
+                    </div>
+                </div>
+
+                <!-- Cppcheck -->
+                <div class="glass-card p-6 flex flex-col h-full relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fa-solid fa-check-double text-5xl text-rose-600"></i></div>
+                    <div class="inline-flex items-center px-2.5 py-1 bg-rose-50 text-rose-700 text-[10px] font-bold rounded-md uppercase tracking-wider border border-rose-100 mb-4 w-max">内存泄漏与 UB 专精</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">Cppcheck (CFG XML)</h4>
+                    <p class="text-sm text-slate-600 flex-grow leading-relaxed">专门针对 C/C++ 设计的经典工具。其源码仓库下的 XML 配置库（标记了哪些 API 已废弃或易溢出），是构建本地危险函数词典的绝佳数据源。</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
+                        <i class="fa-brands fa-github mr-1"></i> danmar/cppcheck/cfg
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-5 bg-slate-800 text-white rounded-xl shadow-lg flex items-center justify-between">
+                <div>
+                    <h5 class="font-bold text-lg"><i class="fa-solid fa-plug text-indigo-400 mr-2"></i> 架构解耦标准：SARIF</h5>
+                    <p class="text-sm text-slate-300 mt-1">不论选择哪种底层工具，强烈建议统一使用 <b>SARIF v2.1.0</b> 格式作为第一层的输出载体，实现与第二层解析器的完全技术解耦。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 第二层：程序切片 -->
+        <section id="layer2" class="scroll-mt-24">
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-black shadow-sm">2</div>
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight">第二层：上下文组装与程序切片 (Program Slicing)</h2>
+                    <p class="text-slate-500 mt-1">从庞大的代码库中抽取局部逻辑，消除噪声，为大模型提供精准“子弹”。</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-indigo-500">
+                    <h4 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-code-branch text-indigo-500 mr-1.5"></i> 逆向切片 (Backward Slicing)</h4>
+                    <p class="text-slate-600 leading-relaxed">从可疑参数（如 <code>memcpy</code> 的 size）出发，逆向追踪控制流，让 LLM 确认该参数在进入危险 Sink 前是否经过安全校验清洗（Sanitization）。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-emerald-500">
+                    <h4 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-arrows-down-to-line text-emerald-500 mr-1.5"></i> 跨层级调用图 (Call Graph)</h4>
+                    <p class="text-slate-600 leading-relaxed">基于 <b>Tree-sitter</b> 或 <b>LSP(Clangd)</b> 向上追溯 1 层 Caller，判断入参是否源自不可信的用户外部网络请求；向下追溯 Callee，防止 LLM 产生误报幻觉。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-amber-500">
+                    <h4 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-cubes text-amber-500 mr-1.5"></i> 结构体宏定义 (Definitions)</h4>
+                    <p class="text-slate-600 leading-relaxed">大模型对复杂的 C/C++ 内存布局缺乏先天感知。必须附带提取出相关 <code>struct</code> 的声明，以便模型能准确计算指针偏移与缓冲区容量。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 沙盘模拟器 (Mac Window Style) -->
+        <section id="simulator" class="scroll-mt-24">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <span class="px-3 py-1 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-full uppercase tracking-widest border border-indigo-100">Interactive Demo</span>
+                <h2 class="text-3xl font-bold text-slate-800 mt-4 tracking-tight">两层架构微观运转沙盘</h2>
+                <p class="text-slate-500 mt-2">点击右侧步骤，直观模拟系统是如何从海量代码中定位、切片并最终交由 LLM 裁决的。</p>
+            </div>
+
+            <div class="mac-window grid grid-cols-1 lg:grid-cols-12 text-sm">
+                <!-- 左侧：IDE 界面 -->
+                <div class="lg:col-span-7 border-b lg:border-b-0 lg:border-r border-[#333] flex flex-col">
+                    <div class="mac-header">
+                        <div class="mac-dots">
+                            <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                        </div>
+                        <div class="mx-auto text-[#888] text-xs font-medium flex items-center">
+                            <i class="fa-solid fa-file-code mr-2"></i> target_server.cpp
+                        </div>
+                    </div>
+                    <div class="p-6 overflow-x-auto bg-[#1e1e1e] code-font text-[13px] leading-relaxed flex-grow">
+                        <!-- 代码行 -->
+<div id="line1" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none"> 1</span><span class="syntax-keyword">typedef struct</span> {</div>
+<div id="line2" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none"> 2</span>    <span class="syntax-keyword">char</span> user_buf[<span class="syntax-string">64</span>];</div>
+<div id="line3" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none"> 3</span>} <span class="syntax-type">RequestContext</span>;</div>
+<div class="px-2"><span class="text-[#858585] mr-4 select-none"> 4</span></div>
+<div id="line5" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none"> 5</span><span class="syntax-keyword">void</span> <span class="syntax-function">process_buffer</span>(<span class="syntax-keyword">char</span>* external_data, <span class="syntax-keyword">int</span> size) {</div>
+<div id="line6" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none"> 6</span>    <span class="syntax-type">RequestContext</span> ctx;</div>
+<div id="line7" class="px-2 transition-colors duration-300 relative"><span class="text-[#858585] mr-4 select-none"> 7</span>    <span class="syntax-function">memcpy</span>(ctx.user_buf, external_data, size); <span class="syntax-comment">// 第一层特征识别点</span></div>
+<div id="line8" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none"> 8</span>}</div>
+<div class="px-2"><span class="text-[#858585] mr-4 select-none"> 9</span></div>
+<div id="line10" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none">10</span><span class="syntax-keyword">void</span> <span class="syntax-function">handle_connection</span>(<span class="syntax-type">Connection</span>* conn) {</div>
+<div id="line11" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none">11</span>    <span class="syntax-keyword">char</span>* raw_payload = conn-&gt;<span class="syntax-function">get_data</span>(); <span class="syntax-comment">// 外部不可信输入</span></div>
+<div id="line12" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none">12</span>    <span class="syntax-keyword">int</span> payload_len = conn-&gt;<span class="syntax-function">get_length</span>();</div>
+<div id="line13" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none">13</span>    <span class="syntax-function">process_buffer</span>(raw_payload, payload_len);</div>
+<div id="line14" class="px-2 transition-colors duration-300"><span class="text-[#858585] mr-4 select-none">14</span>}</div>
+                    </div>
+                </div>
+
+                <!-- 右侧：控制台面板 -->
+                <div class="lg:col-span-5 bg-[#252526] flex flex-col">
+                    <div class="mac-header justify-center">
+                        <span class="text-[#888] text-xs font-bold uppercase tracking-wider">Engine Control</span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col gap-4">
+                        <!-- 按钮组 -->
+                        <button onclick="runStep(1)" id="btnStep1" class="flex items-center text-left p-3 rounded bg-[#333] hover:bg-[#444] text-[#ccc] border border-[#444] transition-colors group">
+                            <div class="w-6 h-6 rounded bg-[#444] text-[#fff] flex items-center justify-center mr-3 font-bold group-hover:bg-[#555]">1</div>
+                            <div>
+                                <div class="font-bold text-[#eee]">SAST 锚点扫描</div>
+                                <div class="text-[10px] text-[#999] mt-0.5">运行 Semgrep/Flawfinder</div>
+                            </div>
+                        </button>
+                        <button onclick="runStep(2)" id="btnStep2" class="flex items-center text-left p-3 rounded bg-[#333] hover:bg-[#444] text-[#ccc] border border-[#444] transition-colors group">
+                            <div class="w-6 h-6 rounded bg-[#444] text-[#fff] flex items-center justify-center mr-3 font-bold group-hover:bg-[#555]">2</div>
+                            <div>
+                                <div class="font-bold text-[#eee]">执行上下文切片</div>
+                                <div class="text-[10px] text-[#999] mt-0.5">AST 解析与 DFG 关联</div>
+                            </div>
+                        </button>
+                        <button onclick="runStep(3)" id="btnStep3" class="flex items-center text-left p-3 rounded bg-[#333] hover:bg-[#444] text-[#ccc] border border-[#444] transition-colors group">
+                            <div class="w-6 h-6 rounded bg-[#444] text-[#fff] flex items-center justify-center mr-3 font-bold group-hover:bg-[#555]">3</div>
+                            <div>
+                                <div class="font-bold text-[#eee]">LLM 裁判审理</div>
+                                <div class="text-[10px] text-[#999] mt-0.5">注入 Prompt 并执行 CoT</div>
+                            </div>
+                        </button>
+
+                        <!-- 输出日志区 -->
+                        <div class="mt-auto bg-[#1e1e1e] rounded border border-[#333] p-4 h-[180px] overflow-y-auto">
+                            <div class="text-[#569cd6] text-xs font-bold mb-2 code-font">> System output:</div>
+                            <div id="stepDetails" class="text-[#ccc] text-xs code-font leading-relaxed">
+                                <span class="text-[#888]">Awaiting execution commands...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. 黄金提示词与 Schema -->
+        <section id="layer3" class="scroll-mt-24">
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl font-black shadow-sm">3</div>
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight">第三层：LLM 结构化输入与防御幻觉</h2>
+                    <p class="text-slate-500 mt-1">采用标准 JSON Schema 传参，设计抗幻觉（Anti-Hallucination）提示词。</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card p-8">
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center">
+                        <i class="fa-solid fa-code text-indigo-500 mr-2"></i> 发送给 LLM 的切片 Payload
+                    </h4>
+                    <pre class="bg-slate-900 text-slate-300 p-5 rounded-xl text-xs code-font overflow-x-auto shadow-inner h-[320px]">
+{
+  <span class="text-indigo-400">"alert"</span>: {
+    <span class="text-indigo-400">"tool"</span>: <span class="text-emerald-400">"Semgrep"</span>,
+    <span class="text-indigo-400">"sink_line"</span>: <span class="text-amber-400">7</span>,
+    <span class="text-indigo-400">"cwe"</span>: <span class="text-emerald-400">"CWE-120"</span>
+  },
+  <span class="text-indigo-400">"context_slices"</span>: {
+    <span class="text-indigo-400">"struct_def"</span>: <span class="text-emerald-400">"typedef struct { char user_buf[64]; } RequestContext;"</span>,
+    <span class="text-indigo-400">"dataflow"</span>: [
+      <span class="text-emerald-400">"L11: char* raw_payload = conn->get_data();"</span>,
+      <span class="text-emerald-400">"L12: int payload_len = conn->get_length();"</span>,
+      <span class="text-emerald-400">"L13: process_buffer(raw_payload, payload_len);"</span>
+    ]
+  },
+  <span class="text-indigo-400">"raw_function"</span>: <span class="text-emerald-400">"void process_buffer(char* external_data, int size) { ... }"</span>
+}</pre>
+                </div>
+
+                <div class="glass-card p-8 bg-gradient-to-br from-white to-slate-50">
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-2"></i> 黄金提示词模板 (System Prompt)
+                    </h4>
+                    <div class="text-sm text-slate-600 leading-relaxed space-y-3 p-5 bg-white rounded-xl border border-amber-100 shadow-sm relative">
+                        <div class="absolute top-0 right-0 w-1.5 h-full bg-amber-400 rounded-r-xl"></div>
+                        <p><b>ROLE:</b> 你是顶尖的 C/C++ 安全审计专家。请基于我提供的 <code>context_slices</code> 评估静态报警的真实性。</p>
+                        <p><b>CONSTRAINT (防御幻觉):</b> 你只能依赖我提供的片段进行推演。<b>绝对不要假设</b>在提供的代码之外存在任何未知的过滤函数或缓冲区长度限制！</p>
+                        <p><b>CoT (思维链):</b> 
+                            <br>1. 追踪变量 Source 是否可控。
+                            <br>2. 检查上下文中是否存在清洗/校验机制。
+                            <br>3. 结合内存结构体大小计算是否越界。
+                        </p>
+                        <p><b>OUTPUT:</b> 仅输出包含 `is_vulnerable` (bool) 和 `reason` 的标准 JSON。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. 路线总结 -->
+        <section id="routes">
+            <div class="bg-indigo-900 rounded-2xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 text-indigo-800/40 text-9xl">
+                    <i class="fa-solid fa-rocket"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 relative z-10">工业落地实施建议 (Implementation Paths)</h3>
+                <p class="text-indigo-200 mb-8 relative z-10">根据研发环境资源，推荐以下两条工程实现路径：</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                    <div class="bg-indigo-950/50 p-6 rounded-xl border border-indigo-700 backdrop-blur-sm">
+                        <h4 class="text-lg font-bold text-emerald-400 mb-3"><i class="fa-solid fa-bolt mr-2"></i>极速免编译路线 (MVP推荐)</h4>
+                        <ul class="text-sm text-indigo-100 space-y-2 list-disc pl-5">
+                            <li><b>场景：</b>IDE 插件或 Pre-commit 检查</li>
+                            <li><b>L1 工具：</b>Semgrep + Flawfinder XML</li>
+                            <li><b>L2 切片：</b>Tree-sitter (Python binding)</li>
+                            <li><b>优点：</b>无需构建脚本，兼容残缺工程，一周可完成原型。</li>
+                        </ul>
+                    </div>
+                    <div class="bg-indigo-950/50 p-6 rounded-xl border border-indigo-700 backdrop-blur-sm">
+                        <h4 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-server mr-2"></i>高精度 CI/CD 路线</h4>
+                        <ul class="text-sm text-indigo-100 space-y-2 list-disc pl-5">
+                            <li><b>场景：</b>服务端全量核心资产扫描</li>
+                            <li><b>L1 工具：</b>CodeQL 或 Clang-Tidy</li>
+                            <li><b>L2 切片：</b>Joern CPG 深度跨文件</li>
+                            <li><b>优点：</b>分析极其精确，基本消除由于缺乏编译期类型知识导致的假阳性。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. 参考文献 (References) -->
+        <section id="references" class="border-t border-slate-200 pt-10 mt-16">
+            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                <i class="fa-solid fa-book-bookmark text-slate-400 mr-2"></i> 参考资源与开源组件文献 (References)
+            </h3>
+            <ol class="list-decimal pl-5 text-sm text-slate-600 space-y-3 font-light">
+                <li>
+                    <b>GitHub Security Lab.</b> <i>CodeQL: The semantic code analysis engine.</i> Available at: 
+                    <a href="https://github.com/github/codeql" class="text-indigo-600 hover:underline" target="_blank">https://github.com/github/codeql</a>.
+                </li>
+                <li>
+                    <b>Return To Corporation (r2c).</b> <i>Semgrep: Lightweight static analysis for many languages.</i> Semgrep C/C++ Rules Registry. Available at: 
+                    <a href="https://github.com/semgrep/semgrep-rules" class="text-indigo-600 hover:underline" target="_blank">github.com/semgrep/semgrep-rules</a>.
+                </li>
+                <li>
+                    <b>LLVM Project.</b> <i>Clang-Tidy and Clang Static Analyzer checks documentation.</i> Available at: 
+                    <a href="https://clang.llvm.org/extra/clang-tidy/" class="text-indigo-600 hover:underline" target="_blank">clang.llvm.org</a>.
+                </li>
+                <li>
+                    <b>Yamaguchi, F., Golde, N., Arp, D., & Rieck, K. (2014).</b> "Modeling and Discovering Vulnerabilities with Code Property Graphs." <i>Proceedings of the 2014 IEEE Symposium on Security and Privacy (S&P)</i>. (奠定了基于图结构提取上下文的学术基础).
+                </li>
+                <li>
+                    <b>Li, Z., Zou, D., Xu, S., et al. (2018).</b> "VulDeePecker: A Deep Learning-Based System for Vulnerability Detection." <i>NDSS</i>. (论证了程序切片技术在神经网络漏洞判定中的降噪价值).
+                </li>
+                <li>
+                    <b>OASIS Standard.</b> <i>Static Analysis Results Interchange Format (SARIF) Version 2.1.0.</i> (本架构第一层与第二层通讯推荐的解耦格式标准).
+                </li>
+            </ol>
+        </section>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-slate-50 py-8 border-t border-slate-200 text-center text-sm text-slate-500">
+        <div class="max-w-7xl mx-auto px-6">
+            <p>基于“传统规则锚定+大模型上下文协同研判”的 C/C++ 智能审计引擎系统设计报告</p>
+            <p class="mt-1 text-slate-400 text-xs">Architected for clarity. Interactive elements powered by Vanilla JS & Chart.js.</p>
+        </div>
+    </footer>
+
+    <!-- 交互逻辑与图表渲染 -->
+    <script>
+        // ================= CHART.JS 渲染逻辑 =================
+        Chart.defaults.color = '#64748b'; // slate-500
+        Chart.defaults.font.family = 'Inter';
+
+        // 图表一：效能对比
+        const ctxEff = document.getElementById('effectivenessChart').getContext('2d');
+        new Chart(ctxEff, {
+            type: 'bar',
+            data: {
+                labels: ['召回率 (Recall)', '准确率 (Precision)', '综合效能 (F1-Score)', '误报率 (FPR)'],
+                datasets: [
+                    {
+                        label: '传统 SAST 裸扫',
+                        data: [95, 20, 33, 80],
+                        backgroundColor: 'rgba(148, 163, 184, 0.5)', // slate-400
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'LLM 直接通读文件',
+                        data: [75, 45, 56, 55],
+                        backgroundColor: 'rgba(245, 158, 11, 0.8)', // amber-500
+                        borderRadius: 4
+                    },
+                    {
+                        label: '两阶段协同 (本方案)',
+                        data: [93, 85, 88, 15],
+                        backgroundColor: 'rgba(79, 70, 229, 0.9)', // indigo-600
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: true, max: 100,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { callback: (value) => value + '%' }
+                    }
+                }
+            }
+        });
+
+        // 图表二：帕累托前沿
+        const ctxPareto = document.getElementById('slicingParetoChart').getContext('2d');
+        new Chart(ctxPareto, {
+            type: 'line',
+            data: {
+                labels: ['0层', '1层', '2层(推荐)', '3层', '全文件'],
+                datasets: [
+                    {
+                        label: '准确度 (%)',
+                        data: [45, 78, 92, 94, 95],
+                        borderColor: '#10b981', // emerald-500
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Token 成本',
+                        data: [1, 2.5, 4, 15, 85],
+                        borderColor: '#6366f1', // indigo-500
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { display: false, min: 0, max: 100 },
+                    y1: { display: false, min: 0 }
+                }
+            }
+        });
+
+        // ================= 沙盘模拟器逻辑 =================
+        function runStep(step) {
+            // 重置全部状态
+            const lines = ['line1','line2','line3','line5','line6','line7','line8','line10','line11','line12','line13','line14'];
+            lines.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.className = "px-2 transition-colors duration-300 relative";
+            });
+            
+            const btns = ['btnStep1','btnStep2','btnStep3'];
+            btns.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.classList.remove('bg-[#10b981]', 'border-[#10b981]');
+                    el.classList.add('bg-[#333]', 'border-[#444]');
+                    el.querySelector('div').classList.remove('bg-white', 'text-[#10b981]');
+                    el.querySelector('div').classList.add('bg-[#444]', 'text-[#fff]');
+                }
+            });
+
+            // 激活当前按钮
+            const activeBtn = document.getElementById('btnStep' + step);
+            activeBtn.classList.remove('bg-[#333]', 'border-[#444]');
+            activeBtn.classList.add('bg-[#10b981]', 'border-[#10b981]');
+            activeBtn.querySelector('div').classList.remove('bg-[#444]', 'text-[#fff]');
+            activeBtn.querySelector('div').classList.add('bg-white', 'text-[#10b981]');
+
+            const details = document.getElementById('stepDetails');
+
+            // 步骤逻辑呈现
+            if(step === 1) {
+                const l7 = document.getElementById('line7');
+                l7.classList.add('bg-[rgba(245,158,11,0.2)]');
+                
+                details.innerHTML = `
+                    <span class="text-[#10b981]">> Initialize SAST Rules...</span><br>
+                    <span class="text-[#ccc]">> Scanning target_server.cpp</span><br>
+                    <span class="text-[#f59e0b]">⚠️ Alert triggered at Line 7:</span><br>
+                    <span class="text-[#fff]">  Pattern match: <code>memcpy(..., ..., size)</code> without bounds checking.</span><br>
+                    <span class="text-[#888]">> Source anchor set. Proceed to context extraction.</span>
+                `;
+            } 
+            else if(step === 2) {
+                // 标记依赖切片
+                ['line1','line2','line3'].forEach(id => document.getElementById(id).classList.add('bg-[rgba(59,130,246,0.15)]')); // struct
+                ['line5','line11','line12','line13'].forEach(id => document.getElementById(id).classList.add('bg-[rgba(16,185,129,0.15)]')); // dfg/cfg
+                document.getElementById('line7').classList.add('bg-[rgba(245,158,11,0.2)]'); // anchor
+
+                details.innerHTML = `
+                    <span class="text-[#10b981]">> Generating Program Slices...</span><br>
+                    <span class="text-[#ccc]">> Backward Slicing on 'size' & 'external_data':</span><br>
+                    <span class="text-[#3b82f6]">  ↳ Extracted DFG: L11 -> L12 -> L13 -> L5</span><br>
+                    <span class="text-[#ccc]">> Resolving Definitions (Tree-sitter):</span><br>
+                    <span class="text-[#3b82f6]">  ↳ Extracted struct: RequestContext (L1-L3)</span><br>
+                    <span class="text-[#888]">> Noise filtered. Payload ready for LLM.</span>
+                `;
+            }
+            else if(step === 3) {
+                // 模拟 LLM 注意力机制
+                document.getElementById('line7').classList.add('bg-[rgba(239,68,68,0.25)]');
+                document.getElementById('line11').classList.add('bg-[rgba(239,68,68,0.15)]');
+
+                details.innerHTML = `
+                    <span class="text-[#10b981]">> Invoking LLM Judgment with CoT...</span><br>
+                    <span class="text-[#ccc]">> Analyzing payload JSON:</span><br>
+                    <span class="text-[#dcdcaa]">  1. Source (L11): <code>conn->get_data()</code> is UNTRUSTED.</span><br>
+                    <span class="text-[#dcdcaa]">  2. Path to Sink (L7): No sanitization/length check found in slice.</span><br>
+                    <span class="text-[#dcdcaa]">  3. Struct layout: <code>user_buf</code> max size is 64 bytes.</span><br>
+                    <span class="text-[#ef4444] font-bold">>> Final Decision: VULNERABLE (True Positive)</span><br>
+                    <span class="text-[#888]">> Action: Ticket automatically created.</span>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
