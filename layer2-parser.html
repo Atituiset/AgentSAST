@@ -1,0 +1,297 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN" class="navy" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>AST 解析器 - AgentSAST</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="AI-Augmented Static Analysis for C/C++">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "navy";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 简介</a></li><li class="chapter-item expanded "><a href="quick-start.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="architecture.html"><strong aria-hidden="true">3.</strong> 整体架构</a></li><li class="chapter-item expanded "><a href="layer1.html"><strong aria-hidden="true">4.</strong> Layer 1: 锚点识别</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer1-models.html"><strong aria-hidden="true">4.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer1-semgrep.html"><strong aria-hidden="true">4.2.</strong> Semgrep 扫描器</a></li><li class="chapter-item expanded "><a href="layer1-flawfinder.html"><strong aria-hidden="true">4.3.</strong> Flawfinder 扫描器</a></li><li class="chapter-item expanded "><a href="layer1-scanner.html"><strong aria-hidden="true">4.4.</strong> 统一扫描入口</a></li></ol></li><li class="chapter-item expanded "><a href="layer2.html"><strong aria-hidden="true">5.</strong> Layer 2: 切片引擎</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer2-models.html"><strong aria-hidden="true">5.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer2-parser.html" class="active"><strong aria-hidden="true">5.2.</strong> AST 解析器</a></li><li class="chapter-item expanded "><a href="layer2-slicer.html"><strong aria-hidden="true">5.3.</strong> 切片算法</a></li></ol></li><li class="chapter-item expanded "><a href="layer3.html"><strong aria-hidden="true">6.</strong> Layer 3: LLM 裁判</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer3-models.html"><strong aria-hidden="true">6.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer3-prompt.html"><strong aria-hidden="true">6.2.</strong> 反幻觉提示工程</a></li><li class="chapter-item expanded "><a href="layer3-judge.html"><strong aria-hidden="true">6.3.</strong> OpenAI 兼容客户端</a></li></ol></li><li class="chapter-item expanded "><a href="pipeline.html"><strong aria-hidden="true">7.</strong> Pipeline 与 CLI</a></li><li class="chapter-item expanded "><a href="data-models.html"><strong aria-hidden="true">8.</strong> 数据模型参考</a></li><li class="chapter-item expanded "><a href="deployment.html"><strong aria-hidden="true">9.</strong> 部署与 GitHub Pages</a></li><li class="chapter-item expanded "><a href="roadmap.html"><strong aria-hidden="true">10.</strong> 路线图与已知局限</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">AgentSAST</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/atituiset/AgentSAST" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/atituiset/AgentSAST/edit/main/book/src/src/layer2-parser.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ast-解析器"><a class="header" href="#ast-解析器">AST 解析器</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer2/parser.py</code></p>
+</blockquote>
+<h2 id="概述"><a class="header" href="#概述">概述</a></h2>
+<p><code>ASTParser</code> 封装 Tree-sitter C/C++ 语法解析，为切片引擎提供 AST 节点访问和代码片段提取能力。</p>
+<h2 id="语法选择策略"><a class="header" href="#语法选择策略">语法选择策略</a></h2>
+<pre><code class="language-python">C_EXTENSIONS = {".c", ".h"}
+CPP_EXTENSIONS = {".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"}
+</code></pre>
+<p><code>_get_language()</code> 根据文件扩展名选择 Tree-sitter 语法：</p>
+<div class="table-wrapper"><table><thead><tr><th>扩展名</th><th>语法</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>.c</code></td><td>tree-sitter-c</td><td>标准 C</td></tr>
+<tr><td><code>.h</code></td><td>tree-sitter-cpp</td><td>C++ 语法覆盖 C 头文件更好 (匿名结构体等)</td></tr>
+<tr><td><code>.cpp/.cc/.cxx</code></td><td>tree-sitter-cpp</td><td>C++</td></tr>
+<tr><td><code>.hpp/.hh/.hxx</code></td><td>tree-sitter-cpp</td><td>C++ 头文件</td></tr>
+</tbody></table>
+</div>
+<p><strong>设计决策</strong>: <code>.h</code> 文件使用 C++ 语法解析，因为 C 语法对匿名结构体和 typedef 的处理不如 C++ 语法完善。</p>
+<h2 id="astparser-类"><a class="header" href="#astparser-类">ASTParser 类</a></h2>
+<h3 id="解析文件"><a class="header" href="#解析文件">解析文件</a></h3>
+<pre><code class="language-python">class ASTParser:
+    def __init__(self):
+        self._parsers: dict[Language, Parser] = {}  # 缓存 Parser 实例
+
+    def parse_file(self, file_path: Path) -&gt; Node | None:
+</code></pre>
+<ul>
+<li>每个 <code>Language</code> 只创建一次 <code>Parser</code> 实例（缓存优化）</li>
+<li>读取文件为字节流 (<code>read_bytes</code>)，Tree-sitter 原生处理 bytes</li>
+<li>解析失败返回 <code>None</code>，不抛异常</li>
+</ul>
+<h3 id="获取行内容"><a class="header" href="#获取行内容">获取行内容</a></h3>
+<pre><code class="language-python">@staticmethod
+def get_line_content(file_path: Path, start_line: int, end_line: int) -&gt; str:
+</code></pre>
+<p>从文件中提取指定行范围的文本内容。注意：</p>
+<ul>
+<li><code>start_line</code> 是 1-indexed，内部转换为 0-indexed</li>
+<li><code>end_line</code> 是 1-indexed 且包含该行</li>
+<li>使用 <code>errors="replace"</code> 读取，容忍编码问题</li>
+</ul>
+<h3 id="ast-节点转-codeslice"><a class="header" href="#ast-节点转-codeslice">AST 节点转 CodeSlice</a></h3>
+<pre><code class="language-python">@staticmethod
+def node_to_slice(file_path: Path, node: Node, slice_type: str, label: str = "") -&gt; CodeSlice:
+</code></pre>
+<p>将 Tree-sitter <code>Node</code> 转换为 <code>CodeSlice</code>：</p>
+<ul>
+<li><code>start_point[0] + 1</code> → 1-indexed 起始行</li>
+<li><code>end_point[0] + 1</code> → 1-indexed 结束行</li>
+<li>从源文件读取实际代码内容（而非 <code>node.text</code>，确保有换行等格式）</li>
+</ul>
+<h2 id="tree-sitter-依赖"><a class="header" href="#tree-sitter-依赖">Tree-sitter 依赖</a></h2>
+<pre><code>tree-sitter &gt;= 0.22        # 核心库
+tree-sitter-c &gt;= 0.23      # C 语法
+tree-sitter-cpp &gt;= 0.23    # C++ 语法
+</code></pre>
+<p>这些是 Python 绑定包，不需要单独编译 grammar。<code>pip install</code> 即可。</p>
+<h2 id="错误处理"><a class="header" href="#错误处理">错误处理</a></h2>
+<ul>
+<li>语法不可用 (扩展名不匹配) → 日志警告，返回 <code>None</code></li>
+<li>文件读取失败 → 日志错误，返回 <code>None</code></li>
+<li>不抛出异常，所有错误在调用方处理</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="layer2-models.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="layer2-slicer.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="layer2-models.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="layer2-slicer.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

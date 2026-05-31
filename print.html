@@ -1,0 +1,1923 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN" class="navy" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>AgentSAST</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="AI-Augmented Static Analysis for C/C++">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "navy";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 简介</a></li><li class="chapter-item expanded "><a href="quick-start.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="architecture.html"><strong aria-hidden="true">3.</strong> 整体架构</a></li><li class="chapter-item expanded "><a href="layer1.html"><strong aria-hidden="true">4.</strong> Layer 1: 锚点识别</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer1-models.html"><strong aria-hidden="true">4.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer1-semgrep.html"><strong aria-hidden="true">4.2.</strong> Semgrep 扫描器</a></li><li class="chapter-item expanded "><a href="layer1-flawfinder.html"><strong aria-hidden="true">4.3.</strong> Flawfinder 扫描器</a></li><li class="chapter-item expanded "><a href="layer1-scanner.html"><strong aria-hidden="true">4.4.</strong> 统一扫描入口</a></li></ol></li><li class="chapter-item expanded "><a href="layer2.html"><strong aria-hidden="true">5.</strong> Layer 2: 切片引擎</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer2-models.html"><strong aria-hidden="true">5.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer2-parser.html"><strong aria-hidden="true">5.2.</strong> AST 解析器</a></li><li class="chapter-item expanded "><a href="layer2-slicer.html"><strong aria-hidden="true">5.3.</strong> 切片算法</a></li></ol></li><li class="chapter-item expanded "><a href="layer3.html"><strong aria-hidden="true">6.</strong> Layer 3: LLM 裁判</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer3-models.html"><strong aria-hidden="true">6.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer3-prompt.html"><strong aria-hidden="true">6.2.</strong> 反幻觉提示工程</a></li><li class="chapter-item expanded "><a href="layer3-judge.html"><strong aria-hidden="true">6.3.</strong> OpenAI 兼容客户端</a></li></ol></li><li class="chapter-item expanded "><a href="pipeline.html"><strong aria-hidden="true">7.</strong> Pipeline 与 CLI</a></li><li class="chapter-item expanded "><a href="data-models.html"><strong aria-hidden="true">8.</strong> 数据模型参考</a></li><li class="chapter-item expanded "><a href="deployment.html"><strong aria-hidden="true">9.</strong> 部署与 GitHub Pages</a></li><li class="chapter-item expanded "><a href="roadmap.html"><strong aria-hidden="true">10.</strong> 路线图与已知局限</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">AgentSAST</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/atituiset/AgentSAST" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="agentsast--ai-augmented-static-analysis-for-cc"><a class="header" href="#agentsast--ai-augmented-static-analysis-for-cc">AgentSAST — AI-Augmented Static Analysis for C/C++</a></h1>
+<h2 id="项目定位"><a class="header" href="#项目定位">项目定位</a></h2>
+<p>AgentSAST 是一款面向 C/C++ 内存安全漏洞的 <strong>AI 增强静态分析工具</strong>。它采用三层漏斗架构，将传统 SAST 的高召回率与 LLM 的高精确率结合，解决传统工具误报泛滥的问题：</p>
+<pre><code>Layer 1: SAST 锚点识别  →  高召回，广撒网
+Layer 2: 程序切片引擎    →  精准上下文提取
+Layer 3: LLM 判定裁判    →  高精确率判定真伪
+</code></pre>
+<h2 id="核心价值"><a class="header" href="#核心价值">核心价值</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>传统 SAST</th><th>AgentSAST</th></tr></thead><tbody>
+<tr><td>误报率 30-90%</td><td>LLM 二次裁定显著降低误报</td></tr>
+<tr><td>只报位置，无法判断真伪</td><td>给出 VULNERABLE / SAFE / UNCERTAIN 三级裁定</td></tr>
+<tr><td>人工 review 成本高</td><td>结构化 CoT 推理 + 置信度评分</td></tr>
+<tr><td>单一工具覆盖有限</td><td>多工具融合 (Semgrep + Flawfinder + 内置模式)</td></tr>
+</tbody></table>
+</div>
+<h2 id="设计哲学"><a class="header" href="#设计哲学">设计哲学</a></h2>
+<ol>
+<li><strong>SAST 为锚，LLM 为裁</strong> — L1 保证召回率，L3 保证精确率，L2 是桥梁</li>
+<li><strong>不依赖编译</strong> — MVP 阶段无需编译目标代码，基于文本匹配 + AST 解析</li>
+<li><strong>切片而非全量</strong> — 程序切片将上下文窗口从全文件压缩到关键数据流，2 层深度覆盖 92% 场景</li>
+<li><strong>反幻觉提示</strong> — 结构化系统提示 + CoT 强制推理链 + 代码行引用约束，最大限度抑制 LLM 幻觉</li>
+<li><strong>OpenAI 兼容</strong> — 支持 GPT-4o / Qwen / DeepSeek / 本地模型，任何 OpenAI 兼容 API 即可接入</li>
+</ol>
+<h2 id="技术栈"><a class="header" href="#技术栈">技术栈</a></h2>
+<ul>
+<li><strong>Python ≥3.10</strong>，venv 隔离</li>
+<li><strong>Tree-sitter</strong> — C/C++ AST 解析 (替代 Joern，无 JVM 依赖)</li>
+<li><strong>Semgrep</strong> — 语义化模式匹配 SARIF 输出</li>
+<li><strong>Flawfinder</strong> — 危险函数字典扫描</li>
+<li><strong>OpenAI SDK</strong> — 兼容所有 OpenAI API 格式的 LLM 服务</li>
+<li><strong>SARIF v2.1.0</strong> — 统一 L1 输出格式</li>
+</ul>
+<h2 id="项目结构"><a class="header" href="#项目结构">项目结构</a></h2>
+<pre><code>AgentSAST/
+├── src/agentsast/
+│   ├── layer1/          # SAST 锚点识别
+│   │   ├── models.py    # Anchor, Location, Severity
+│   │   ├── scanner.py   # 统一扫描入口 + SARIF 通用解析
+│   │   ├── semgrep.py   # Semgrep SARIF 输出解析
+│   │   └── flawfinder.py # Flawfinder + 内置模式扫描器
+│   ├── layer2/          # 程序切片引擎
+│   │   ├── models.py    # CodeSlice, SlicingResult
+│   │   ├── parser.py    # Tree-sitter C/C++ AST 解析器
+│   │   └── slicer.py    # SlicingEngine (后向切片/调用图/结构体提取)
+│   ├── layer3/          # LLM 裁判
+│   │   ├── models.py    # Verdict, LLMResult
+│   │   ├── prompt.py    # 反幻觉系统提示 + 结构化负载构建
+│   │   └── judge.py     # OpenAI API 客户端 + JSON 响应解析
+│   ├── pipeline/
+│   │   └── engine.py    # 三层 Pipeline 编排
+│   └── cli.py           # Click CLI + Rich 终端输出
+├── samples/
+│   ├── vulnerable_server.c
+│   └── safe_server.c
+├── tests/
+│   └── test_pipeline.py
+├── pyproject.toml
+└── book/                # 本文档 (mdBook)
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="快速开始"><a class="header" href="#快速开始">快速开始</a></h1>
+<h2 id="安装"><a class="header" href="#安装">安装</a></h2>
+<pre><code class="language-bash"># 克隆仓库
+git clone https://github.com/atituiset/AgentSAST.git
+cd AgentSAST
+
+# 创建虚拟环境
+python -m venv .venv
+source .venv/bin/activate
+
+# 安装项目
+pip install -e .
+
+# 安装开发依赖 (可选)
+pip install -e ".[dev]"
+</code></pre>
+<h2 id="外部工具-可选"><a class="header" href="#外部工具-可选">外部工具 (可选)</a></h2>
+<p>AgentSAST 内置模式扫描器作为后备，即使不安装外部工具也能工作：</p>
+<pre><code class="language-bash"># 安装 Semgrep (推荐)
+pip install semgrep
+
+# 安装 Flawfinder (推荐，Ubuntu/Debian)
+sudo apt install flawfinder
+</code></pre>
+<h2 id="基础用法"><a class="header" href="#基础用法">基础用法</a></h2>
+<h3 id="仅-l1l2-跳过-llm"><a class="header" href="#仅-l1l2-跳过-llm">仅 L1+L2 (跳过 LLM)</a></h3>
+<p>无需 API Key，快速扫描：</p>
+<pre><code class="language-bash">agentsast samples/ --skip-llm --tools flawfinder
+</code></pre>
+<p>输出示例：</p>
+<pre><code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AgentSAST — AI-Augmented Static Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Target: /path/to/samples
+Tools: flawfinder
+LLM: skipped
+
+┌──────────────────────────────────────────────────────────┐
+│  AgentSAST Results — /path/to/samples                    │
+├──────────────────┬──────┬─────────────┬────────┬─────────┤
+│ File             │ Line │ Tool        │ CWE    │ Verdict │
+├──────────────────┼──────┼─────────────┼────────┼─────────┤
+│ vulnerable_se…   │   17 │ AgentSAST…  │ CWE-…  │ SKIPPED │
+│ vulnerable_se…   │   18 │ AgentSAST…  │ CWE-…  │ SKIPPED │
+└──────────────────┴──────┴─────────────┴────────┴─────────┘
+
+Summary: 6 anchors → 0 vulnerable, 0 safe, 0 uncertain
+</code></pre>
+<h3 id="完整三层-pipeline"><a class="header" href="#完整三层-pipeline">完整三层 Pipeline</a></h3>
+<p>需要 OpenAI 兼容 API Key：</p>
+<pre><code class="language-bash"># 使用 OpenAI GPT-4o
+export OPENAI_API_KEY="sk-..."
+agentsast samples/ --tools flawfinder
+
+# 使用本地/第三方模型 (Qwen, DeepSeek, Ollama 等)
+export OPENAI_API_KEY="your-key"
+export OPENAI_BASE_URL="https://api.deepseek.com/v1"
+agentsast samples/ --llm-model deepseek-chat --tools flawfinder
+</code></pre>
+<h3 id="输出-json"><a class="header" href="#输出-json">输出 JSON</a></h3>
+<pre><code class="language-bash">agentsast samples/ --skip-llm --tools flawfinder -o results.json
+</code></pre>
+<h2 id="cli-参数一览"><a class="header" href="#cli-参数一览">CLI 参数一览</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>参数</th><th>环境变量</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>TARGET</code></td><td>—</td><td>(必填)</td><td>扫描目标路径</td></tr>
+<tr><td><code>--project-root</code></td><td>—</td><td>None</td><td>跨文件切片的项目根目录</td></tr>
+<tr><td><code>--tools</code> / <code>-t</code></td><td>—</td><td>semgrep, flawfinder</td><td>启用的 SAST 工具</td></tr>
+<tr><td><code>--semgrep-config</code></td><td>—</td><td>p/c</td><td>Semgrep 规则集</td></tr>
+<tr><td><code>--max-call-depth</code></td><td>—</td><td>2</td><td>调用链切片最大深度</td></tr>
+<tr><td><code>--llm-model</code></td><td>—</td><td>gpt-4o</td><td>LLM 模型名称</td></tr>
+<tr><td><code>--llm-api-key</code></td><td><code>OPENAI_API_KEY</code></td><td>None</td><td>API Key</td></tr>
+<tr><td><code>--llm-base-url</code></td><td><code>OPENAI_BASE_URL</code></td><td>None</td><td>API Base URL</td></tr>
+<tr><td><code>--skip-llm</code></td><td>—</td><td>false</td><td>跳过 L3，仅运行 L1+L2</td></tr>
+<tr><td><code>--output</code> / <code>-o</code></td><td>—</td><td>None</td><td>JSON 输出文件路径</td></tr>
+<tr><td><code>--verbose</code> / <code>-v</code></td><td>—</td><td>false</td><td>开启 DEBUG 日志</td></tr>
+</tbody></table>
+</div>
+<h2 id="测试"><a class="header" href="#测试">测试</a></h2>
+<pre><code class="language-bash">pytest tests/ -v
+</code></pre>
+<p>12 个测试用例覆盖 L1 模式扫描、L2 切片引擎、L3 提示构建和结果模型。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="整体架构"><a class="header" href="#整体架构">整体架构</a></h1>
+<h2 id="三层漏斗模型"><a class="header" href="#三层漏斗模型">三层漏斗模型</a></h2>
+<p>AgentSAST 的核心设计是 <strong>三层漏斗</strong>：每一层逐步收敛，从广撒网到精准判定。</p>
+<pre><code>┌─────────────────────────────────────────────────┐
+│  Layer 1: SAST Anchoring (锚点识别)              │
+│  多工具并行扫描 → SARIF 统一 → 锚点去重           │
+│  召回率: 高  |  精确率: 低  |  输出: Anchor[]     │
+├─────────────────────────────────────────────────┤
+│  Layer 2: Program Slicing (程序切片)             │
+│  后向数据流切片 + 结构体提取 + 调用图追踪          │
+│  输入: Anchor  |  输出: SlicingResult            │
+├─────────────────────────────────────────────────┤
+│  Layer 3: LLM Judgment (LLM 裁判)               │
+│  反幻觉 CoT → 结构化 JSON → 置信度阈值裁定        │
+│  输入: Anchor + SlicingResult                    │
+│  输出: LLMResult (VULNERABLE/SAFE/UNCERTAIN)     │
+└─────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="数据流"><a class="header" href="#数据流">数据流</a></h2>
+<pre><code>源代码 (C/C++ files)
+    │
+    ▼
+┌──────────┐     ┌────────────┐
+│ Semgrep  │     │ Flawfinder │   (并行扫描)
+│ (SARIF)  │     │  (SARIF)   │
+└────┬─────┘     └─────┬──────┘
+     │                 │
+     ▼                 ▼
+┌──────────────────────────┐
+│   scanner.py 统一入口     │   去重: (tool, file, line)
+│   → Anchor[]             │
+└──────────┬───────────────┘
+           │
+           ▼  (逐个 Anchor)
+┌──────────────────────────┐
+│   SlicingEngine           │
+│   1. Tree-sitter 解析 AST │
+│   2. 定位锚点所在函数       │
+│   3. 后向切片数据流         │
+│   4. 提取结构体定义         │
+│   5. 搜索调用者/被调用者    │
+│   → SlicingResult         │
+└──────────┬───────────────┘
+           │
+           ▼
+┌──────────────────────────┐
+│   LLMJudge                │
+│   1. 构建 payload          │
+│   2. 生成 user prompt      │
+│   3. 调用 OpenAI API       │
+│   4. 解析 JSON 响应        │
+│   5. 置信度 &lt; 0.3 → UNCERTAIN │
+│   → LLMResult             │
+└──────────────────────────┘
+</code></pre>
+<h2 id="容错设计"><a class="header" href="#容错设计">容错设计</a></h2>
+<p>Pipeline 中每一层都有容错机制：</p>
+<div class="table-wrapper"><table><thead><tr><th>阶段</th><th>异常处理</th></tr></thead><tbody>
+<tr><td>L1 单个扫描器失败</td><td>跳过该扫描器，继续执行其他扫描器</td></tr>
+<tr><td>L2 单个锚点切片失败</td><td>跳过该锚点，记录异常日志</td></tr>
+<tr><td>L3 单个锚点 LLM 判定失败</td><td>标记 UNCERTAIN (confidence=0.0)，不阻塞其他锚点</td></tr>
+</tbody></table>
+</div>
+<p><strong>核心原则</strong>: 任何单点失败不阻塞整体 Pipeline，最终总是产出完整结果。</p>
+<h2 id="关键设计决策"><a class="header" href="#关键设计决策">关键设计决策</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>决策</th><th>原因</th></tr></thead><tbody>
+<tr><td>Tree-sitter 代替 Joern</td><td>MVP 快速原型，无 Scala/JVM 依赖</td></tr>
+<tr><td><code>.h</code> 文件用 C++ 语法解析</td><td>C++ 语法覆盖 C 头文件更好</td></tr>
+<tr><td>内置模式扫描器作为后备</td><td>即使 Flawfinder 未安装，L1 也能产出锚点</td></tr>
+<tr><td>切片深度限制 2 层</td><td>Pareto: 2 层覆盖 92% 场景，4x token 成本</td></tr>
+<tr><td>置信度 &lt;0.3 强制 UNCERTAIN</td><td>防止 LLM 低信心误判</td></tr>
+<tr><td>SARIF v2.1.0 统一格式</td><td>行业标准，便于与 IDE/GitHub 集成</td></tr>
+</tbody></table>
+</div>
+<h2 id="目录结构映射"><a class="header" href="#目录结构映射">目录结构映射</a></h2>
+<pre><code>src/agentsast/
+├── layer1/               ← Layer 1: 锚点识别
+│   ├── models.py         ← Anchor, Location, Severity 数据模型
+│   ├── scanner.py        ← 统一扫描入口 + SARIF 通用解析
+│   ├── semgrep.py        ← Semgrep 扫描器 + SARIF 解析
+│   └── flawfinder.py     ← Flawfinder + 内置模式扫描器
+├── layer2/               ← Layer 2: 切片引擎
+│   ├── models.py         ← CodeSlice, SlicingResult 数据模型
+│   ├── parser.py         ← Tree-sitter C/C++ AST 解析器
+│   └── slicer.py         ← SlicingEngine 核心算法
+├── layer3/               ← Layer 3: LLM 裁判
+│   ├── models.py         ← Verdict, LLMResult 数据模型
+│   ├── prompt.py         ← 系统提示 + 负载构建 + 用户提示
+│   └── judge.py          ← OpenAI 客户端 + 响应解析
+├── pipeline/
+│   └── engine.py         ← Pipeline 编排 + PipelineResult
+└── cli.py                ← Click CLI + Rich 输出
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-1-锚点识别"><a class="header" href="#layer-1-锚点识别">Layer 1: 锚点识别</a></h1>
+<p>Layer 1 是 AgentSAST 漏斗的第一层，职责是 <strong>高召回率地识别潜在漏洞锚点</strong>。它的设计哲学是"宁报勿漏"——宁可多报误报，也不能漏掉真正的漏洞。误报的过滤交给 L2 和 L3 完成。</p>
+<h2 id="工作原理"><a class="header" href="#工作原理">工作原理</a></h2>
+<pre><code>源代码
+  │
+  ├──→ Semgrep 扫描器 ──→ SARIF ──→ Anchor[]
+  │
+  ├──→ Flawfinder 扫描器 ──→ SARIF ──→ Anchor[]
+  │
+  └──→ (Flawfinder 不可用时)
+       内置模式扫描器 ──→ Anchor[]
+                │
+                ▼
+         scanner.py 统一入口
+         去重: (tool, file, line) 三元组
+                │
+                ▼
+            Anchor[]
+</code></pre>
+<h2 id="核心组件"><a class="header" href="#核心组件">核心组件</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>组件</th><th>文件</th><th>职责</th></tr></thead><tbody>
+<tr><td>数据模型</td><td><code>layer1/models.py</code></td><td><code>Anchor</code>, <code>Location</code>, <code>Severity</code> 定义</td></tr>
+<tr><td>统一入口</td><td><code>layer1/scanner.py</code></td><td>并行调度扫描器 + SARIF 通用解析 + 去重</td></tr>
+<tr><td>Semgrep</td><td><code>layer1/semgrep.py</code></td><td>调用 Semgrep CLI + 解析 SARIF 输出</td></tr>
+<tr><td>Flawfinder</td><td><code>layer1/flawfinder.py</code></td><td>调用 Flawfinder CLI + 内置模式扫描器后备</td></tr>
+</tbody></table>
+</div>
+<h2 id="去重策略"><a class="header" href="#去重策略">去重策略</a></h2>
+<p>多个扫描器可能报告同一位置的同一问题。去重基于 <code>(tool, file, line)</code> 三元组：</p>
+<ul>
+<li>同一工具、同一文件、同一行 → 只保留第一个</li>
+<li>不同工具报告同一行 → 都保留（不同工具视角互补）</li>
+</ul>
+<h2 id="sarif-v210-统一格式"><a class="header" href="#sarif-v210-统一格式">SARIF v2.1.0 统一格式</a></h2>
+<p>所有 L1 扫描器最终产出 SARIF v2.1.0 格式的结果，这是 OASIS 标准，便于与 GitHub Code Scanning、VS Code 等生态集成。SARIF 核心字段映射：</p>
+<div class="table-wrapper"><table><thead><tr><th>SARIF 字段</th><th>Anchor 字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>ruleId</code></td><td><code>rule_id</code></td><td>规则 ID</td></tr>
+<tr><td><code>level</code></td><td><code>severity</code></td><td>严重等级</td></tr>
+<tr><td><code>message.text</code></td><td><code>message</code></td><td>告警描述</td></tr>
+<tr><td><code>locations[0].physicalLocation</code></td><td><code>location</code></td><td>文件+行列号</td></tr>
+<tr><td><code>properties.tags</code> (CWE-*)</td><td><code>cwe</code></td><td>CWE 编号</td></tr>
+<tr><td>—</td><td><code>sink_function</code></td><td>危险函数名 (从消息提取)</td></tr>
+<tr><td>—</td><td><code>sink_params</code></td><td>数据流参数 (从 codeFlows 提取)</td></tr>
+</tbody></table>
+</div>
+<h2 id="内置模式扫描器"><a class="header" href="#内置模式扫描器">内置模式扫描器</a></h2>
+<p>当 Flawfinder 未安装时，自动启用内置模式扫描器。它维护了一个 23 项的危险函数→CWE 映射表：</p>
+<div class="table-wrapper"><table><thead><tr><th>函数族</th><th>CWE</th><th>典型函数</th></tr></thead><tbody>
+<tr><td>缓冲区溢出</td><td>CWE-120</td><td>memcpy, strcpy, strcat, gets, sprintf, scanf, vsprintf</td></tr>
+<tr><td>堆溢出</td><td>CWE-787</td><td>malloc, realloc</td></tr>
+<tr><td>双重释放</td><td>CWE-415</td><td>free</td></tr>
+<tr><td>命令注入</td><td>CWE-78</td><td>system, popen, execl/execle/execlp/execv/execve/execvp</td></tr>
+<tr><td>格式化字符串</td><td>CWE-134</td><td>printf, fprintf, syslog</td></tr>
+</tbody></table>
+</div>
+<p>这个扫描器本质上是正则级别（<code>\b(func_name)\s*\(</code>），没有数据流分析，因此误报率很高——但这正是 L2+L3 存在的意义。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-1-数据模型"><a class="header" href="#layer-1-数据模型">Layer 1 数据模型</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer1/models.py</code></p>
+</blockquote>
+<h2 id="severity"><a class="header" href="#severity">Severity</a></h2>
+<p>告警严重等级枚举，直接映射 SARIF <code>level</code> 字段：</p>
+<pre><code class="language-python">class Severity(str, Enum):
+    ERROR = "error"      # 确认漏洞
+    WARNING = "warning"  # 可疑
+    NOTE = "note"        # 信息性
+    NONE = "none"        # 无等级
+</code></pre>
+<p>继承 <code>str, Enum</code> 使其可直接与 SARIF JSON 字符串比较。</p>
+<h2 id="location"><a class="header" href="#location">Location</a></h2>
+<p>代码位置，对应 SARIF <code>physicalLocation</code>：</p>
+<pre><code class="language-python">@dataclass
+class Location:
+    file: Path           # 文件路径
+    line: int            # 起始行号 (1-indexed)
+    col: int = 0         # 起始列号
+    end_line: int = 0    # 结束行号
+    end_col: int = 0     # 结束列号
+</code></pre>
+<p><code>__post_init__</code> 确保传入的 <code>file</code> 始终转为 <code>Path</code> 对象。</p>
+<h2 id="anchor"><a class="header" href="#anchor">Anchor</a></h2>
+<p>L1 的核心输出——一个"锚点"代表一个 SAST 工具报告的潜在漏洞位置：</p>
+<pre><code class="language-python">@dataclass
+class Anchor:
+    rule_id: str                # 规则 ID (如 "CWE-120", "agentsast-builtin-memcpy")
+    tool: str                   # 工具名 (如 "Semgrep", "Flawfinder", "AgentSAST-Pattern")
+    severity: Severity          # 严重等级
+    message: str                # 告警描述
+    location: Location          # 代码位置
+    cwe: str = ""               # CWE 编号 (如 "CWE-120")
+    sink_function: str = ""     # 危险函数名 (如 "memcpy")
+    sink_params: list[str] = field(default_factory=list)  # 数据流参数
+    raw_sarif: dict = field(default_factory=dict)          # 原始 SARIF 结果
+</code></pre>
+<h3 id="便利属性"><a class="header" href="#便利属性">便利属性</a></h3>
+<ul>
+<li><code>anchor.file</code> → <code>anchor.location.file</code> (快捷访问)</li>
+<li><code>anchor.line</code> → <code>anchor.location.line</code> (快捷访问)</li>
+</ul>
+<h3 id="序列化"><a class="header" href="#序列化">序列化</a></h3>
+<p><code>to_dict()</code> 方法将 Anchor 转为可 JSON 序列化的字典，用于 Pipeline 输出和 CLI 展示。</p>
+<h2 id="锚点去重"><a class="header" href="#锚点去重">锚点去重</a></h2>
+<p>在 <code>scanner.py</code> 中，基于 <code>(tool, file, line)</code> 三元组去重：</p>
+<pre><code class="language-python">key = (anchor.tool, str(anchor.file), anchor.line)
+if key not in seen:
+    seen.add(key)
+    all_anchors.append(anchor)
+</code></pre>
+<p>这保证了同一工具在同一行不会重复报告，但不同工具报告同一行会各自保留。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="semgrep-扫描器"><a class="header" href="#semgrep-扫描器">Semgrep 扫描器</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer1/semgrep.py</code></p>
+</blockquote>
+<h2 id="概述"><a class="header" href="#概述">概述</a></h2>
+<p><code>SemgrepScanner</code> 封装了 Semgrep CLI 的调用与 SARIF 输出解析。Semgrep 是一个语义化模式匹配引擎，支持多语言，比正则精确但不需要完整编译。</p>
+<h2 id="类接口"><a class="header" href="#类接口">类接口</a></h2>
+<pre><code class="language-python">class SemgrepScanner:
+    NAME = "Semgrep"
+
+    def __init__(self, config: str = "p/c", timeout: int = 300)
+    def is_available(self) -&gt; bool
+    def scan(self, target: Path) -&gt; list[Anchor]
+    def _parse_sarif(self, sarif_path: Path) -&gt; list[Anchor]
+</code></pre>
+<h2 id="执行流程"><a class="header" href="#执行流程">执行流程</a></h2>
+<pre><code>scan(target)
+  │
+  ├── is_available()?  ── No ──→ 返回 [] (跳过)
+  │
+  ├── 执行: semgrep scan --config p/c --sarif -o /tmp/agentsast_semgrep.sarif --no-git &lt;target&gt;
+  │
+  ├── 超时/找不到命令 → 返回 []
+  │
+  └── _parse_sarif(sarif_path)
+       ├── 解析 SARIF JSON
+       ├── 遍历 runs[].results[]
+       ├── 提取 ruleId, level, message, location
+       ├── 从 rules[].properties.tags 提取 CWE 编号
+       ├── _extract_sink(): 从消息文本提取危险函数名
+       ├── _extract_sink_params(): 从 codeFlows 提取数据流参数
+       └── 返回 Anchor[]
+</code></pre>
+<h2 id="配置参数"><a class="header" href="#配置参数">配置参数</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>参数</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>config</code></td><td><code>p/c</code></td><td>Semgrep 规则集 (p/c = C 语言社区规则)</td></tr>
+<tr><td><code>timeout</code></td><td>300</td><td>CLI 执行超时 (秒)</td></tr>
+</tbody></table>
+</div>
+<h2 id="sarif-解析细节"><a class="header" href="#sarif-解析细节">SARIF 解析细节</a></h2>
+<p>Semgrep 的 SARIF 输出结构：</p>
+<pre><code class="language-json">{
+  "runs": [{
+    "tool": { "driver": { "name": "Semgrep", "rules": [...] } },
+    "results": [{
+      "ruleId": "c.lang.buffer.memcpy-no-size-check",
+      "level": "warning",
+      "message": { "text": "..." },
+      "locations": [{
+        "physicalLocation": {
+          "artifactLocation": { "uri": "src/main.c" },
+          "region": { "startLine": 17, "startColumn": 5 }
+        }
+      }],
+      "codeFlows": [{ "threadFlows": [...] }]
+    }]
+  }]
+}
+</code></pre>
+<p>关键解析逻辑：</p>
+<ol>
+<li><strong>规则映射</strong>: 先将 <code>rules[]</code> 建成 <code>rules_map[id→rule]</code>，用于后续 CWE 提取</li>
+<li><strong>CWE 提取</strong>: 从 <code>rule.properties.tags</code> 中查找 <code>CWE-*</code> 前缀的标签</li>
+<li><strong>路径处理</strong>: 如果 SARIF 中的 <code>uri</code> 是绝对路径，去除前导 <code>/</code> 使其相对化</li>
+<li><strong>Sink 提取</strong>: 从消息文本中匹配已知的危险函数名列表</li>
+</ol>
+<h2 id="可用性检测"><a class="header" href="#可用性检测">可用性检测</a></h2>
+<p><code>is_available()</code> 通过执行 <code>semgrep --version</code> 判断 Semgrep 是否在 PATH 中，10 秒超时。不可用时优雅跳过，不影响其他扫描器。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="flawfinder-扫描器"><a class="header" href="#flawfinder-扫描器">Flawfinder 扫描器</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer1/flawfinder.py</code></p>
+</blockquote>
+<h2 id="概述-1"><a class="header" href="#概述-1">概述</a></h2>
+<p><code>FlawfinderScanner</code> 提供两种模式：</p>
+<ol>
+<li><strong>原生 Flawfinder</strong> — 调用系统安装的 Flawfinder CLI，获取 SARIF 输出</li>
+<li><strong>内置模式扫描器</strong> — Flawfinder 未安装时的后备方案，基于正则匹配危险函数</li>
+</ol>
+<h2 id="危险函数映射表"><a class="header" href="#危险函数映射表">危险函数映射表</a></h2>
+<p>内置 23 个危险函数到 CWE 的映射：</p>
+<pre><code class="language-python">DANGER_FUNCTIONS = {
+    # CWE-120: 缓冲区溢出 (11 个)
+    "memcpy": "CWE-120", "strcpy": "CWE-120", "strcat": "CWE-120",
+    "gets": "CWE-120", "sprintf": "CWE-120", "scanf": "CWE-120",
+    "vsprintf": "CWE-120", "strncat": "CWE-120", "strncpy": "CWE-120",
+    "snprintf": "CWE-120",
+    # CWE-787: 堆溢出 (2 个)
+    "malloc": "CWE-787", "realloc": "CWE-787",
+    # CWE-415: 双重释放 (1 个)
+    "free": "CWE-415",
+    # CWE-78: 命令注入 (7 个)
+    "system": "CWE-78", "popen": "CWE-78",
+    "execl": "CWE-78", "execle": "CWE-78", "execlp": "CWE-78",
+    "execv": "CWE-78", "execve": "CWE-78", "execvp": "CWE-78",
+    # CWE-134: 格式化字符串 (3 个)
+    "printf": "CWE-134", "fprintf": "CWE-134", "syslog": "CWE-134",
+}
+</code></pre>
+<h2 id="执行流程-1"><a class="header" href="#执行流程-1">执行流程</a></h2>
+<pre><code>scan(target)
+  │
+  ├── is_available()? ── Yes ──→ 执行 Flawfinder CLI
+  │   │                           │
+  │   │                           ├── flawfinder --minlevel 3 --sarif &lt;target&gt;
+  │   │                           │
+  │   │                           └── _parse_sarif_output(stdout)
+  │   │                                ├── 解析 SARIF JSON
+  │   │                                ├── 提取 location, message, CWE
+  │   │                                └── _extract_sink_from_message()
+  │   │
+  │   └── No ──→ _pattern_scan(target)
+  │                │
+  │                ├── _collect_source_files(target)  ← 递归收集 C/C++ 文件
+  │                │
+  │                ├── 正则匹配: \b(func1|func2|...)\s*\(
+  │                │
+  │                └── 为每个匹配生成 Anchor
+  │                     ├── rule_id = "agentsast-builtin-{func_name}"
+  │                     ├── tool = "AgentSAST-Pattern"
+  │                     └── severity = WARNING (固定)
+</code></pre>
+<h2 id="内置模式扫描器详解"><a class="header" href="#内置模式扫描器详解">内置模式扫描器详解</a></h2>
+<h3 id="文件收集"><a class="header" href="#文件收集">文件收集</a></h3>
+<p><code>_collect_source_files()</code> 支持扫描目录或单文件，匹配扩展名：</p>
+<pre><code class="language-python">extensions = {".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh", ".hxx"}
+</code></pre>
+<h3 id="正则匹配"><a class="header" href="#正则匹配">正则匹配</a></h3>
+<pre><code class="language-python">func_pattern = re.compile(
+    r"\b(" + "|".join(re.escape(f) for f in DANGER_FUNCTIONS) + r")\s*\("
+)
+</code></pre>
+<p>这个模式：</p>
+<ul>
+<li>使用 <code>\b</code> 词边界防止子串匹配 (如 <code>my_memcpy</code> 不会误匹配 <code>memcpy</code>)</li>
+<li>匹配函数名后紧跟 <code>(</code> 的调用形式</li>
+<li><code>re.escape</code> 处理函数名中的特殊字符</li>
+</ul>
+<h3 id="行号计算"><a class="header" href="#行号计算">行号计算</a></h3>
+<pre><code class="language-python">line_no = content[: match.start()].count("\n") + 1
+</code></pre>
+<p>通过统计匹配位置之前的换行符数量来确定行号 (1-indexed)。</p>
+<h2 id="flawfinder-cli-参数"><a class="header" href="#flawfinder-cli-参数">Flawfinder CLI 参数</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>参数</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>min_level</code></td><td>3</td><td>最低风险等级 (1-5, 5 最严重)</td></tr>
+<tr><td><code>timeout</code></td><td>300</td><td>执行超时 (秒)</td></tr>
+</tbody></table>
+</div>
+<h2 id="cwe-提取策略"><a class="header" href="#cwe-提取策略">CWE 提取策略</a></h2>
+<p><code>_extract_cwe()</code> 有两层回退：</p>
+<ol>
+<li>优先从 <code>properties.tags</code> 中提取 <code>CWE-*</code> 标签</li>
+<li>回退到从 <code>message.text</code> 中正则匹配 <code>CWE-\d+</code></li>
+</ol>
+<h2 id="局限性"><a class="header" href="#局限性">局限性</a></h2>
+<p>Flawfinder 本质是危险函数字典扫描器，与内置模式扫描器同一级别：</p>
+<ul>
+<li><strong>无数据流分析</strong> — 不知道参数来源和大小</li>
+<li><strong>无路径敏感</strong> — 不考虑分支条件</li>
+<li><strong>高误报率</strong> — 这是设计上的权衡，精确率留给 L3</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="统一扫描入口"><a class="header" href="#统一扫描入口">统一扫描入口</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer1/scanner.py</code></p>
+</blockquote>
+<h2 id="概述-2"><a class="header" href="#概述-2">概述</a></h2>
+<p><code>scanner.py</code> 是 Layer 1 的统一入口，负责：</p>
+<ol>
+<li>调度多个扫描器并行执行</li>
+<li>通用 SARIF 文件解析 (独立于任何扫描器)</li>
+<li>锚点去重</li>
+</ol>
+<h2 id="scan-函数"><a class="header" href="#scan-函数">scan() 函数</a></h2>
+<pre><code class="language-python">def scan(
+    target: Path,
+    tools: list[str] | None = None,   # 默认 ["semgrep", "flawfinder"]
+    config: str = "p/c",              # Semgrep 规则集
+) -&gt; list[Anchor]
+</code></pre>
+<h3 id="执行流程-2"><a class="header" href="#执行流程-2">执行流程</a></h3>
+<pre><code>scan(target, tools)
+  │
+  ├── 路径验证: target 必须存在
+  │
+  ├── 根据 tools 列表实例化扫描器:
+  │   ├── "semgrep"    → SemgrepScanner(config=config)
+  │   └── "flawfinder" → FlawfinderScanner()
+  │
+  ├── 逐个执行扫描器 (容错):
+  │   ├── scanner.scan(target) ── 成功 → anchors
+  │   └── scanner.scan(target) ── 异常 → 跳过, 记录日志
+  │
+  ├── 去重: 基于 (tool, file, line) 三元组
+  │
+  └── 返回 all_anchors: list[Anchor]
+</code></pre>
+<h3 id="容错机制"><a class="header" href="#容错机制">容错机制</a></h3>
+<pre><code class="language-python">for scanner in scanners:
+    try:
+        anchors = scanner.scan(target)
+    except Exception:
+        logger.exception("Scanner %s failed", scanner.NAME)
+        continue  # 不阻塞其他扫描器
+</code></pre>
+<p>单个扫描器的任何异常都不会影响其他扫描器的执行。</p>
+<h2 id="parse_sarif_file-函数"><a class="header" href="#parse_sarif_file-函数">parse_sarif_file() 函数</a></h2>
+<p>独立的 SARIF 文件解析器，不依赖任何扫描器类。用于解析已有的 SARIF 文件（例如从 CI 管线中获取的）：</p>
+<pre><code class="language-python">def parse_sarif_file(sarif_path: Path) -&gt; list[Anchor]
+</code></pre>
+<p>解析逻辑与 <code>SemgrepScanner._parse_sarif()</code> 类似，但更通用：</p>
+<ul>
+<li>从 <code>runs[].tool.driver.name</code> 提取工具名</li>
+<li>从 <code>runs[].tool.driver.rules[]</code> 构建规则映射</li>
+<li>从 <code>properties.tags</code> 提取 CWE</li>
+</ul>
+<h2 id="去重策略-1"><a class="header" href="#去重策略-1">去重策略</a></h2>
+<pre><code class="language-python">seen: set[tuple[str, str, int]] = set()
+
+for anchor in anchors:
+    key = (anchor.tool, str(anchor.file), anchor.line)
+    if key not in seen:
+        seen.add(key)
+        all_anchors.append(anchor)
+</code></pre>
+<p><strong>去重粒度</strong>: 同一工具 + 同一文件 + 同一行 → 只保留第一个命中。</p>
+<p><strong>为什么不去重不同工具的重复报告</strong>: 不同工具的视角互补。Semgrep 可能基于数据流报告，Flawfinder 基于函数调用报告——即使同位置，信息维度不同，各自保留供 L2/L3 参考。</p>
+<h2 id="工具选择"><a class="header" href="#工具选择">工具选择</a></h2>
+<p>CLI 通过 <code>--tools</code> 参数控制启用哪些工具：</p>
+<pre><code class="language-bash"># 仅使用 Flawfinder + 内置模式
+agentsast samples/ --tools flawfinder
+
+# 使用全部工具
+agentsast samples/ --tools semgrep --tools flawfinder
+
+# 多次 -t 也可
+agentsast samples/ -t semgrep -t flawfinder
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-2-切片引擎"><a class="header" href="#layer-2-切片引擎">Layer 2: 切片引擎</a></h1>
+<p>Layer 2 是 AgentSAST 的核心桥梁，职责是将 L1 产出的稀疏锚点 <strong>膨胀为丰富的代码上下文</strong>，供 L3 的 LLM 进行精确判定。</p>
+<h2 id="为什么需要切片"><a class="header" href="#为什么需要切片">为什么需要切片？</a></h2>
+<p>LLM 的判定质量高度依赖上下文完整度。如果把整个文件喂给 LLM：</p>
+<ul>
+<li>Token 浪费：一个 500 行文件中，与漏洞相关的可能只有 20 行</li>
+<li>信息噪音：无关代码干扰 LLM 判断</li>
+<li>窗口限制：大文件可能超出上下文窗口</li>
+</ul>
+<p>程序切片技术从锚点出发，<strong>只提取与漏洞相关的代码片段</strong>。</p>
+<h2 id="四类切片"><a class="header" href="#四类切片">四类切片</a></h2>
+<p><code>SlicingEngine</code> 对每个 Anchor 提取四类上下文：</p>
+<div class="table-wrapper"><table><thead><tr><th>切片类型</th><th>目的</th><th>源字段</th></tr></thead><tbody>
+<tr><td><strong>raw_function</strong></td><td>锚点所在的完整函数体</td><td><code>SlicingResult.raw_function</code></td></tr>
+<tr><td><strong>struct_defs</strong></td><td>函数中使用的结构体/类型定义</td><td><code>SlicingResult.struct_defs</code></td></tr>
+<tr><td><strong>dataflow_slices</strong></td><td>从数据源到 sink 的后向切片</td><td><code>SlicingResult.dataflow_slices</code></td></tr>
+<tr><td><strong>caller_slices</strong></td><td>调用当前函数的上游函数</td><td><code>SlicingResult.caller_slices</code></td></tr>
+<tr><td><strong>callee_slices</strong></td><td>当前函数调用的下游函数</td><td><code>SlicingResult.callee_slices</code></td></tr>
+</tbody></table>
+</div>
+<h2 id="执行流程-3"><a class="header" href="#执行流程-3">执行流程</a></h2>
+<pre><code>slice_anchor(anchor, project_root)
+  │
+  ├── 1. 解析锚点文件 → AST
+  │
+  ├── 2. 定位锚点所在函数 (_find_enclosing_function)
+  │
+  ├── 3. 提取原始函数体 → raw_function
+  │
+  ├── 4. 提取结构体定义 (_extract_struct_defs)
+  │     └── 从函数体提取类型名 → 全文件搜索定义
+  │
+  ├── 5. 后向数据流切片 (_extract_dataflow)
+  │     ├── 提取函数参数名
+  │     ├── 提取 sink 函数参数变量
+  │     └── 对每个变量执行 _backward_slice_var
+  │
+  ├── 6. 调用者搜索 (_extract_callers)
+  │     ├── 当前文件内搜索
+  │     └── 跨文件搜索 (project_root)
+  │
+  └── 7. 被调用者搜索 (_extract_callees)
+        └── 函数体内所有 call_expression
+</code></pre>
+<h2 id="切片深度控制"><a class="header" href="#切片深度控制">切片深度控制</a></h2>
+<p><code>max_call_depth</code> 参数控制调用链追踪深度：</p>
+<ul>
+<li>默认值 2：覆盖 92% 的实用场景</li>
+<li>深度越深 → 上下文越完整，但 token 成本指数增长</li>
+<li>Pareto 最优点：2 层是精度/成本的最佳平衡</li>
+</ul>
+<h2 id="跨文件搜索"><a class="header" href="#跨文件搜索">跨文件搜索</a></h2>
+<p>当提供 <code>project_root</code> 时，<code>_extract_callers</code> 会在整个项目中搜索调用当前函数的其他文件：</p>
+<pre><code class="language-python">for src_file in search_dir.rglob("*"):
+    if src_file.suffix in (".c", ".cpp", ".cc", ".cxx", ".h", ".hpp"):
+        other_root = self._get_ast(src_file)
+        other_callers = _find_callers(other_root, func_name)
+</code></pre>
+<p>搜索结果受 <code>max_call_depth</code> 限制，防止爆炸。</p>
+<h2 id="ast-缓存"><a class="header" href="#ast-缓存">AST 缓存</a></h2>
+<p><code>SlicingEngine._file_cache</code> 缓存已解析的 AST，避免同一文件重复解析：</p>
+<pre><code class="language-python">def _get_ast(self, file_path: Path) -&gt; Node | None:
+    file_path = file_path.resolve()
+    if file_path not in self._file_cache:
+        self._file_cache[file_path] = self.parser.parse_file(file_path)
+    return self._file_cache[file_path]
+</code></pre>
+<p><strong>注意</strong>: 长时间运行的会话中，缓存不会失效。如果文件在运行期间被修改，需要重建 <code>SlicingEngine</code> 实例。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-2-数据模型"><a class="header" href="#layer-2-数据模型">Layer 2 数据模型</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer2/models.py</code></p>
+</blockquote>
+<h2 id="codeslice"><a class="header" href="#codeslice">CodeSlice</a></h2>
+<p>单个代码切片，代表一段从源文件中提取的代码片段：</p>
+<pre><code class="language-python">@dataclass
+class CodeSlice:
+    file: Path            # 源文件路径
+    start_line: int       # 起始行号 (1-indexed)
+    end_line: int         # 结束行号 (1-indexed)
+    content: str          # 代码内容
+    slice_type: str = "unknown"  # 切片类型
+    label: str = ""              # 可读标签
+</code></pre>
+<h3 id="slice_type-取值"><a class="header" href="#slice_type-取值">slice_type 取值</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>"raw_function"</code></td><td>锚点所在的完整函数体</td></tr>
+<tr><td><code>"struct_def"</code></td><td>结构体/类型定义</td></tr>
+<tr><td><code>"dataflow"</code></td><td>后向数据流切片</td></tr>
+<tr><td><code>"caller"</code></td><td>调用者函数</td></tr>
+<tr><td><code>"callee"</code></td><td>被调用函数</td></tr>
+<tr><td><code>"full_function_backdrop"</code></td><td>降级模式：函数从头到 sink 的全量代码</td></tr>
+</tbody></table>
+</div>
+<h3 id="label-示例"><a class="header" href="#label-示例">label 示例</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>slice_type</th><th>label 格式</th><th>示例</th></tr></thead><tbody>
+<tr><td><code>raw_function</code></td><td><code>"sink_function"</code></td><td>—</td></tr>
+<tr><td><code>struct_def</code></td><td>类型名</td><td><code>"RequestContext"</code></td></tr>
+<tr><td><code>dataflow</code></td><td><code>"backward_slice:{var}"</code></td><td><code>"backward_slice:external_data"</code></td></tr>
+<tr><td><code>caller</code></td><td><code>"caller_of:{func}"</code></td><td><code>"caller_of:process_buffer"</code></td></tr>
+<tr><td><code>callee</code></td><td><code>"callee:{func}"</code></td><td><code>"callee:printf"</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="序列化-1"><a class="header" href="#序列化-1">序列化</a></h3>
+<pre><code class="language-python">def to_dict(self) -&gt; dict:
+    return {
+        "file": str(self.file),
+        "start_line": self.start_line,
+        "end_line": self.end_line,
+        "content": self.content,
+        "slice_type": self.slice_type,
+        "label": self.label,
+    }
+</code></pre>
+<h2 id="slicingresult"><a class="header" href="#slicingresult">SlicingResult</a></h2>
+<p>一个锚点的完整切片结果，包含所有四类切片：</p>
+<pre><code class="language-python">@dataclass
+class SlicingResult:
+    anchor_file: Path                               # 锚点文件
+    anchor_line: int                                # 锚点行号
+    struct_defs: list[CodeSlice] = field(default_factory=list)
+    dataflow_slices: list[CodeSlice] = field(default_factory=list)
+    caller_slices: list[CodeSlice] = field(default_factory=list)
+    callee_slices: list[CodeSlice] = field(default_factory=list)
+    raw_function: CodeSlice | None = None
+</code></pre>
+<h3 id="all_slices"><a class="header" href="#all_slices">all_slices()</a></h3>
+<p>便利方法，返回所有切片的合并列表：</p>
+<pre><code class="language-python">def all_slices(self) -&gt; list[CodeSlice]:
+    slices = []
+    slices.extend(self.struct_defs)
+    slices.extend(self.dataflow_slices)
+    slices.extend(self.caller_slices)
+    slices.extend(self.callee_slices)
+    if self.raw_function:
+        slices.append(self.raw_function)
+    return slices
+</code></pre>
+<h3 id="to_dict"><a class="header" href="#to_dict">to_dict()</a></h3>
+<p>序列化时 <code>callee_slices</code> 不包含在输出中（当前版本简化），但 <code>raw_function</code> 会单独处理：</p>
+<pre><code class="language-python">def to_dict(self) -&gt; dict:
+    result = {
+        "anchor_file": str(self.anchor_file),
+        "anchor_line": self.anchor_line,
+        "struct_defs": [s.to_dict() for s in self.struct_defs],
+        "dataflow_slices": [s.to_dict() for s in self.dataflow_slices],
+        "caller_slices": [s.to_dict() for s in self.caller_slices],
+    }
+    if self.raw_function:
+        result["raw_function"] = self.raw_function.to_dict()
+    return result
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="ast-解析器"><a class="header" href="#ast-解析器">AST 解析器</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer2/parser.py</code></p>
+</blockquote>
+<h2 id="概述-3"><a class="header" href="#概述-3">概述</a></h2>
+<p><code>ASTParser</code> 封装 Tree-sitter C/C++ 语法解析，为切片引擎提供 AST 节点访问和代码片段提取能力。</p>
+<h2 id="语法选择策略"><a class="header" href="#语法选择策略">语法选择策略</a></h2>
+<pre><code class="language-python">C_EXTENSIONS = {".c", ".h"}
+CPP_EXTENSIONS = {".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"}
+</code></pre>
+<p><code>_get_language()</code> 根据文件扩展名选择 Tree-sitter 语法：</p>
+<div class="table-wrapper"><table><thead><tr><th>扩展名</th><th>语法</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>.c</code></td><td>tree-sitter-c</td><td>标准 C</td></tr>
+<tr><td><code>.h</code></td><td>tree-sitter-cpp</td><td>C++ 语法覆盖 C 头文件更好 (匿名结构体等)</td></tr>
+<tr><td><code>.cpp/.cc/.cxx</code></td><td>tree-sitter-cpp</td><td>C++</td></tr>
+<tr><td><code>.hpp/.hh/.hxx</code></td><td>tree-sitter-cpp</td><td>C++ 头文件</td></tr>
+</tbody></table>
+</div>
+<p><strong>设计决策</strong>: <code>.h</code> 文件使用 C++ 语法解析，因为 C 语法对匿名结构体和 typedef 的处理不如 C++ 语法完善。</p>
+<h2 id="astparser-类"><a class="header" href="#astparser-类">ASTParser 类</a></h2>
+<h3 id="解析文件"><a class="header" href="#解析文件">解析文件</a></h3>
+<pre><code class="language-python">class ASTParser:
+    def __init__(self):
+        self._parsers: dict[Language, Parser] = {}  # 缓存 Parser 实例
+
+    def parse_file(self, file_path: Path) -&gt; Node | None:
+</code></pre>
+<ul>
+<li>每个 <code>Language</code> 只创建一次 <code>Parser</code> 实例（缓存优化）</li>
+<li>读取文件为字节流 (<code>read_bytes</code>)，Tree-sitter 原生处理 bytes</li>
+<li>解析失败返回 <code>None</code>，不抛异常</li>
+</ul>
+<h3 id="获取行内容"><a class="header" href="#获取行内容">获取行内容</a></h3>
+<pre><code class="language-python">@staticmethod
+def get_line_content(file_path: Path, start_line: int, end_line: int) -&gt; str:
+</code></pre>
+<p>从文件中提取指定行范围的文本内容。注意：</p>
+<ul>
+<li><code>start_line</code> 是 1-indexed，内部转换为 0-indexed</li>
+<li><code>end_line</code> 是 1-indexed 且包含该行</li>
+<li>使用 <code>errors="replace"</code> 读取，容忍编码问题</li>
+</ul>
+<h3 id="ast-节点转-codeslice"><a class="header" href="#ast-节点转-codeslice">AST 节点转 CodeSlice</a></h3>
+<pre><code class="language-python">@staticmethod
+def node_to_slice(file_path: Path, node: Node, slice_type: str, label: str = "") -&gt; CodeSlice:
+</code></pre>
+<p>将 Tree-sitter <code>Node</code> 转换为 <code>CodeSlice</code>：</p>
+<ul>
+<li><code>start_point[0] + 1</code> → 1-indexed 起始行</li>
+<li><code>end_point[0] + 1</code> → 1-indexed 结束行</li>
+<li>从源文件读取实际代码内容（而非 <code>node.text</code>，确保有换行等格式）</li>
+</ul>
+<h2 id="tree-sitter-依赖"><a class="header" href="#tree-sitter-依赖">Tree-sitter 依赖</a></h2>
+<pre><code>tree-sitter &gt;= 0.22        # 核心库
+tree-sitter-c &gt;= 0.23      # C 语法
+tree-sitter-cpp &gt;= 0.23    # C++ 语法
+</code></pre>
+<p>这些是 Python 绑定包，不需要单独编译 grammar。<code>pip install</code> 即可。</p>
+<h2 id="错误处理"><a class="header" href="#错误处理">错误处理</a></h2>
+<ul>
+<li>语法不可用 (扩展名不匹配) → 日志警告，返回 <code>None</code></li>
+<li>文件读取失败 → 日志错误，返回 <code>None</code></li>
+<li>不抛出异常，所有错误在调用方处理</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="切片算法"><a class="header" href="#切片算法">切片算法</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer2/slicer.py</code></p>
+</blockquote>
+<h2 id="概述-4"><a class="header" href="#概述-4">概述</a></h2>
+<p><code>SlicingEngine</code> 是 Layer 2 的核心，实现基于 Tree-sitter AST 的程序切片。本文档详解每个算法步骤。</p>
+<h2 id="辅助函数"><a class="header" href="#辅助函数">辅助函数</a></h2>
+<h3 id="_walk_treenode"><a class="header" href="#_walk_treenode">_walk_tree(node)</a></h3>
+<p>广度优先遍历 AST 所有后代节点：</p>
+<pre><code class="language-python">def _walk_tree(node: Node):
+    stack = list(node.children)
+    while stack:
+        child = stack.pop()
+        yield child
+        stack.extend(child.children)
+</code></pre>
+<blockquote>
+<p>注意：使用 <code>stack.pop()</code> 实现的是 DFS（后进先出），而非 BFS。这对切片结果不影响——我们只关心"找到"节点，不关心遍历顺序。</p>
+</blockquote>
+<h3 id="_contains_linenode-line"><a class="header" href="#_contains_linenode-line">_contains_line(node, line)</a></h3>
+<p>判断 AST 节点是否包含指定行号：</p>
+<pre><code class="language-python">def _contains_line(node: Node, line: int) -&gt; bool:
+    return node.start_point[0] + 1 &lt;= line &lt;= node.end_point[0] + 1
+</code></pre>
+<h3 id="_find_enclosing_functionroot-line"><a class="header" href="#_find_enclosing_functionroot-line">_find_enclosing_function(root, line)</a></h3>
+<p>查找包含指定行的最小 <code>function_definition</code> 节点：</p>
+<pre><code class="language-python">def _find_enclosing_function(root: Node, line: int) -&gt; Node | None:
+    best: Node | None = None
+    for node in _walk_tree(root):
+        if node.type == "function_definition" and _contains_line(node, line):
+            if best is None or (node 跨度 &lt; best 跨度):
+                best = node
+    return best
+</code></pre>
+<p><strong>选最小函数</strong>: 如果有嵌套函数定义（C 语法不支持，但 C++ lambda 可能有类似情况），选择跨度最小的——即最内层函数。</p>
+<h2 id="结构体提取"><a class="header" href="#结构体提取">结构体提取</a></h2>
+<h3 id="_extract_type_names_from_nodenode"><a class="header" href="#_extract_type_names_from_nodenode">_extract_type_names_from_node(node)</a></h3>
+<p>从函数体中提取所有类型标识符：</p>
+<ul>
+<li>遍历所有 <code>type_identifier</code> 节点</li>
+<li>遍历所有 <code>struct_specifier</code> 的 <code>name</code> 字段</li>
+</ul>
+<p>返回类型名集合，如 <code>{"RequestContext", "NetworkPacket"}</code>。</p>
+<h3 id="_find_struct_defsroot-type_names"><a class="header" href="#_find_struct_defsroot-type_names">_find_struct_defs(root, type_names)</a></h3>
+<p>在全文件 AST 中搜索匹配的结构体定义，支持三种形式：</p>
+<ol>
+<li><strong>typedef struct</strong> — <code>type_definition</code> 包含 <code>type_identifier</code> 子节点</li>
+<li><strong>struct specifier</strong> — <code>struct_specifier</code> 有 <code>name</code> 字段</li>
+<li><strong>匿名 typedef struct</strong> — <code>struct_specifier</code> 在 <code>type_definition</code> 内</li>
+</ol>
+<pre><code class="language-python">def _find_struct_defs(root: Node, type_names: set[str]) -&gt; list[Node]:
+    # 优先匹配 typedef_name (type_identifier)
+    # 其次匹配 struct_specifier.name
+    # 去重：同一 type_definition 不重复添加
+</code></pre>
+<p><strong>C typedef 特殊处理</strong>: C 语言中 <code>typedef struct { ... } RequestContext;</code> 的类型名在 <code>type_identifier</code> 子节点上，而非 <code>struct_specifier.name</code>。这是因为匿名结构体的 <code>struct_specifier</code> 没有 <code>name</code> 字段。</p>
+<h2 id="后向数据流切片"><a class="header" href="#后向数据流切片">后向数据流切片</a></h2>
+<h3 id="_backward_slice_varnode-var_name-max_depth2"><a class="header" href="#_backward_slice_varnode-var_name-max_depth2">_backward_slice_var(node, var_name, max_depth=2)</a></h3>
+<p>从目标节点向上搜索变量的定义和赋值：</p>
+<pre><code class="language-python">def _backward_slice_var(node: Node, var_name: str, max_depth: int = 2) -&gt; list[Node]:
+    related: list[Node] = []
+    scope = node.parent
+    depth = 0
+    while scope and depth &lt; max_depth:
+        for child in _walk_tree(scope):
+            if child.type == "declaration" and 包含 var_name:
+                related.append(child)
+            elif child.type == "assignment_expression" and left == var_name:
+                related.append(child)
+        scope = scope.parent
+        depth += 1
+    return related
+</code></pre>
+<p><strong>作用域爬升</strong>: 从当前节点开始，逐层向上搜索父作用域，最多爬升 <code>max_depth</code> 层。</p>
+<h3 id="_extract_dataflow-完整流程"><a class="header" href="#_extract_dataflow-完整流程">_extract_dataflow() 完整流程</a></h3>
+<pre><code>_extract_dataflow(file_path, root, func_node, anchor)
+  │
+  ├── 提取函数参数名
+  │   ├── parameter_declaration → declarator → identifier
+  │   └── pointer_declarator → identifier
+  │
+  ├── 提取 sink 函数参数变量
+  │   ├── call_expression.function == anchor.sink_function
+  │   ├── arguments → identifier (直接变量)
+  │   └── arguments → pointer_expression/field_expression → identifier
+  │
+  ├── 对每个变量执行 _backward_slice_var
+  │   └── 排除与 sink 同行的声明 (避免冗余)
+  │
+  └── 降级: 如果无切片结果
+       └── 生成 "full_function_backdrop" (函数开头到 sink)
+</code></pre>
+<h2 id="调用图追踪"><a class="header" href="#调用图追踪">调用图追踪</a></h2>
+<h3 id="_find_callersroot-func_name"><a class="header" href="#_find_callersroot-func_name">_find_callers(root, func_name)</a></h3>
+<p>搜索调用指定函数的所有函数定义：</p>
+<pre><code class="language-python">def _find_callers(root: Node, func_name: str) -&gt; list[Node]:
+    for node in _walk_tree(root):
+        if node.type == "function_definition":
+            body = node.child_by_field_name("body")
+            for child in _walk_tree(body):
+                if child.type == "call_expression":
+                    func = child.child_by_field_name("function")
+                    if func.text.decode().strip() == func_name:
+                        callers.append(node)
+                        break  # 一个函数只记录一次
+</code></pre>
+<h3 id="_find_calleesfunc_node"><a class="header" href="#_find_calleesfunc_node">_find_callees(func_node)</a></h3>
+<p>提取函数体内调用的所有函数：</p>
+<pre><code class="language-python">def _find_callees(func_node: Node) -&gt; list[tuple[str, Node]]:
+    body = func_node.child_by_field_name("body")
+    for child in _walk_tree(body):
+        if child.type == "call_expression":
+            func = child.child_by_field_name("function")
+            callees.append((func.text.decode().strip(), child))
+    return callees
+</code></pre>
+<h2 id="跨文件调用者搜索"><a class="header" href="#跨文件调用者搜索">跨文件调用者搜索</a></h2>
+<p><code>_extract_callers()</code> 在提供 <code>project_root</code> 时，会搜索项目中其他源文件：</p>
+<pre><code class="language-python">if project_root and file_path != project_root:
+    for src_file in search_dir.rglob("*"):
+        if src_file.suffix in (".c", ".cpp", ".cc", ".cxx", ".h", ".hpp"):
+            if src_file.resolve() != file_path.resolve():
+                other_root = self._get_ast(src_file)
+                other_callers = _find_callers(other_root, func_name)
+                # 添加到 slices
+                if len(slices) &gt;= max_call_depth:
+                    break
+</code></pre>
+<p>结果受 <code>max_call_depth</code> 限制（默认 2），防止单个锚点的调用者切片爆炸。</p>
+<h2 id="函数名提取"><a class="header" href="#函数名提取">函数名提取</a></h2>
+<p><code>_get_function_name()</code> 从 <code>function_definition</code> 节点提取函数名，处理多种声明形式：</p>
+<pre><code>int foo()           → declarator → identifier "foo"
+int *foo()          → declarator → pointer_declarator → identifier "foo"
+int (*foo)(int)     → declarator → function_declarator → identifier "foo"
+</code></pre>
+<h2 id="已知局限"><a class="header" href="#已知局限">已知局限</a></h2>
+<ol>
+<li><strong>宏不展开</strong> — Tree-sitter 不预处理 C 宏，<code>DANGEROUS_CALL(x)</code> 不会被识别</li>
+<li><strong>指针别名追踪有限</strong> — 1-2 层深度无法完整追踪多级指针间接</li>
+<li><strong>跨文件搜索全量扫描</strong> — <code>rglob("*")</code> 对大项目性能不佳</li>
+<li><strong>C++ 虚函数/函数指针</strong> — 只能匹配静态调用，无法追踪动态分发</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-3-llm-裁判"><a class="header" href="#layer-3-llm-裁判">Layer 3: LLM 裁判</a></h1>
+<p>Layer 3 是 AgentSAST 漏斗的最后一层，职责是 <strong>用 LLM 对 L2 切片上下文进行精确判定</strong>，输出 VULNERABLE / SAFE / UNCERTAIN 三级裁定。</p>
+<h2 id="核心挑战"><a class="header" href="#核心挑战">核心挑战</a></h2>
+<p>LLM 裁判面临两个核心挑战：</p>
+<ol>
+<li><strong>幻觉问题</strong> — LLM 可能"脑补"代码中不存在的安全检查</li>
+<li><strong>一致性</strong> — 同一漏洞，不同提示可能导致不同判定</li>
+</ol>
+<p>AgentSAST 的解决方案：</p>
+<ul>
+<li>反幻觉系统提示 (4 条硬约束)</li>
+<li>强制 Chain-of-Thought 推理链 (4 步分析流程)</li>
+<li>结构化 JSON 输出 + 置信度阈值</li>
+</ul>
+<h2 id="三级裁定"><a class="header" href="#三级裁定">三级裁定</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>裁定</th><th>含义</th><th>条件</th></tr></thead><tbody>
+<tr><td><code>VULNERABLE</code></td><td>确认真漏洞</td><td><code>is_vulnerable=true</code> 且 <code>confidence≥0.3</code></td></tr>
+<tr><td><code>SAFE</code></td><td>确认误报</td><td><code>is_vulnerable=false</code> 且 <code>confidence≥0.3</code></td></tr>
+<tr><td><code>UNCERTAIN</code></td><td>无法判定</td><td><code>confidence&lt;0.3</code> 或 API 失败</td></tr>
+</tbody></table>
+</div>
+<p><strong>置信度阈值</strong>: <code>confidence &lt; 0.3</code> 时强制为 UNCERTAIN，防止低信心误判。</p>
+<h2 id="数据流-1"><a class="header" href="#数据流-1">数据流</a></h2>
+<pre><code>Anchor + SlicingResult
+    │
+    ▼
+build_payload()          ← 构建结构化负载
+    │
+    ▼
+build_user_prompt()      ← 生成用户提示
+    │
+    ▼
+OpenAI API 调用          ← system_prompt + user_prompt
+    │
+    ▼
+_parse_response()        ← 解析 JSON + 置信度阈值
+    │
+    ▼
+LLMResult
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-3-数据模型"><a class="header" href="#layer-3-数据模型">Layer 3 数据模型</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer3/models.py</code></p>
+</blockquote>
+<h2 id="verdict"><a class="header" href="#verdict">Verdict</a></h2>
+<p>三级裁定枚举：</p>
+<pre><code class="language-python">class Verdict(str, Enum):
+    VULNERABLE = "vulnerable"   # 确认真漏洞
+    SAFE = "safe"               # 确认误报
+    UNCERTAIN = "uncertain"     # 无法判定
+</code></pre>
+<p>继承 <code>str, Enum</code> 使其可直接序列化为字符串，与 JSON 输出兼容。</p>
+<h2 id="llmresult"><a class="header" href="#llmresult">LLMResult</a></h2>
+<p>LLM 裁判的完整结果：</p>
+<pre><code class="language-python">@dataclass
+class LLMResult:
+    anchor_file: str       # 锚点文件
+    anchor_line: int       # 锚点行号
+    verdict: Verdict       # 裁定结果
+    confidence: float      # 置信度 [0.0, 1.0]
+    reason: str            # 推理过程
+    cwe: str = ""          # CWE 编号 (可能被 LLM 修正)
+    raw_response: str = "" # LLM 原始响应文本
+</code></pre>
+<h3 id="字段说明"><a class="header" href="#字段说明">字段说明</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>来源</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>anchor_file</code></td><td>从 Anchor 传入</td><td>用于关联 L1 锚点</td></tr>
+<tr><td><code>anchor_line</code></td><td>从 Anchor 传入</td><td>用于关联 L1 锚点</td></tr>
+<tr><td><code>verdict</code></td><td>从 LLM JSON 响应解析</td><td>经置信度阈值修正</td></tr>
+<tr><td><code>confidence</code></td><td>LLM JSON <code>confidence</code> 字段</td><td>&lt;0.3 时 verdict 被覆盖为 UNCERTAIN</td></tr>
+<tr><td><code>reason</code></td><td>LLM JSON <code>reason</code> 字段</td><td>Chain-of-Thought 推理文本</td></tr>
+<tr><td><code>cwe</code></td><td>LLM JSON <code>cwe</code> 字段，回退到 Anchor.cwe</td><td>LLM 可能给出更精确的 CWE</td></tr>
+<tr><td><code>raw_response</code></td><td>LLM 原始文本</td><td>用于调试和审计</td></tr>
+</tbody></table>
+</div>
+<h3 id="便利属性-1"><a class="header" href="#便利属性-1">便利属性</a></h3>
+<pre><code class="language-python">@property
+def is_vulnerable(self) -&gt; bool:
+    return self.verdict == Verdict.VULNERABLE
+</code></pre>
+<h3 id="序列化-2"><a class="header" href="#序列化-2">序列化</a></h3>
+<p><code>to_dict()</code> 不包含 <code>raw_response</code>（避免输出过大）：</p>
+<pre><code class="language-python">def to_dict(self) -&gt; dict:
+    return {
+        "anchor_file": self.anchor_file,
+        "anchor_line": self.anchor_line,
+        "verdict": self.verdict.value,
+        "confidence": self.confidence,
+        "reason": self.reason,
+        "cwe": self.cwe,
+    }
+</code></pre>
+<h2 id="置信度阈值机制"><a class="header" href="#置信度阈值机制">置信度阈值机制</a></h2>
+<p>在 <code>judge.py</code> 的 <code>_parse_response()</code> 中：</p>
+<pre><code class="language-python">verdict = Verdict.VULNERABLE if is_vuln else Verdict.SAFE
+if confidence &lt; 0.3:
+    verdict = Verdict.UNCERTAIN
+</code></pre>
+<p><strong>设计理由</strong>:</p>
+<ul>
+<li>LLM 在不确定时仍可能输出 <code>is_vulnerable: false</code>（保守偏向 safe）</li>
+<li><code>confidence &lt; 0.3</code> 意味着 LLM 自信不足，此时无论 <code>is_vulnerable</code> 值是什么，都不应信任</li>
+<li>UNCERTAIN 裁定提示安全工程师需要人工 review</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="反幻觉提示工程"><a class="header" href="#反幻觉提示工程">反幻觉提示工程</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer3/prompt.py</code></p>
+</blockquote>
+<h2 id="系统提示"><a class="header" href="#系统提示">系统提示</a></h2>
+<p><code>SYSTEM_PROMPT</code> 是 AgentSAST 反幻觉策略的核心，包含 4 条硬约束 + 4 步分析流程：</p>
+<h3 id="四条反幻觉硬约束"><a class="header" href="#四条反幻觉硬约束">四条反幻觉硬约束</a></h3>
+<pre><code>## CRITICAL CONSTRAINTS (Anti-Hallucination)
+1. You MUST base your reasoning ONLY on the code fragments
+   provided in `context_slices`.
+2. You MUST NOT assume the existence of any sanitization,
+   bounds-checking, or validation logic that is NOT present
+   in the provided code.
+3. If you are unsure whether a check exists, state it
+   explicitly — do NOT guess that it is safe.
+4. You MUST reference specific line numbers from the
+   provided context when making your argument.
+</code></pre>
+<div class="table-wrapper"><table><thead><tr><th>约束</th><th>对抗的幻觉模式</th></tr></thead><tbody>
+<tr><td>仅基于提供代码</td><td>LLM 倾向"脑补"项目其他文件中的检查</td></tr>
+<tr><td>不得假设检查存在</td><td>LLM 可能认为"开发者肯定做了校验"</td></tr>
+<tr><td>不确定时明确声明</td><td>防止低信心判定被输出为 SAFE</td></tr>
+<tr><td>引用具体行号</td><td>强制 LLM 定位到代码，而非泛泛而谈</td></tr>
+</tbody></table>
+</div>
+<h3 id="chain-of-thought-四步分析"><a class="header" href="#chain-of-thought-四步分析">Chain-of-Thought 四步分析</a></h3>
+<pre><code>Step 1: Source Tracing     → 追踪变量来源，判断是否外部可控
+Step 2: Sanitization Check → 沿数据流路径搜索校验逻辑
+Step 3: Memory Layout      → 分析缓冲区大小 vs 数据大小
+Step 4: Verdict            → 综合以上步骤做出裁定
+</code></pre>
+<h3 id="结构化-json-输出"><a class="header" href="#结构化-json-输出">结构化 JSON 输出</a></h3>
+<pre><code class="language-json">{
+    "is_vulnerable": true/false,
+    "confidence": 0.0-1.0,
+    "cwe": "CWE-XXX or empty",
+    "reason": "Detailed reasoning with line references"
+}
+</code></pre>
+<p>严格要求"仅输出 JSON，无 markdown、无额外解释"，便于程序化解析。</p>
+<h2 id="build_payload"><a class="header" href="#build_payload">build_payload()</a></h2>
+<p>将 Anchor + SlicingResult 转换为结构化负载字典：</p>
+<pre><code class="language-python">def build_payload(anchor: Anchor, slicing: SlicingResult) -&gt; dict:
+</code></pre>
+<p>输出结构：</p>
+<pre><code class="language-python">{
+    "alert": {
+        "tool": "Flawfinder",
+        "rule_id": "agentsast-builtin-memcpy",
+        "sink_line": 17,
+        "cwe": "CWE-120",
+        "message": "Dangerous function 'memcpy' called — ...",
+        "sink_function": "memcpy",
+    },
+    "context_slices": {
+        "struct_defs": ["L5: typedef struct { char user_buf[64]; ... }"],
+        "dataflow": ["L15: void process_buffer(char* external_data, int size)"],
+        "callers": ["L21 (caller_of:process_buffer): void handle_connection(...)"],
+    },
+    "raw_function": "void process_buffer(char* external_data, int size) { ... }"
+}
+</code></pre>
+<p><strong>格式化规则</strong>:</p>
+<ul>
+<li>每个 slice 前缀行号: <code>L{start_line}: {content}</code></li>
+<li>caller 额外标注 label: <code>L{start_line} ({label}): {content}</code></li>
+<li>内容 <code>.strip()</code> 去除首尾空白</li>
+</ul>
+<h2 id="build_user_prompt"><a class="header" href="#build_user_prompt">build_user_prompt()</a></h2>
+<p>将结构化负载转为 LLM 友好的用户提示文本：</p>
+<pre><code class="language-python">def build_user_prompt(payload: dict) -&gt; str:
+</code></pre>
+<p>输出格式：</p>
+<pre><code class="language-markdown">## Alert from Flawfinder
+- Rule: agentsast-builtin-memcpy
+- CWE: CWE-120
+- Sink at line 17: function `memcpy`
+- Message: Dangerous function 'memcpy' called — ...
+
+## Struct/Type Definitions
+L5: typedef struct { char user_buf[64]; int flags; } RequestContext;
+
+## Data Flow (Backward Slicing)
+L15: void process_buffer(char* external_data, int size)
+
+## Caller Context
+L21 (caller_of:process_buffer): void handle_connection(Connection* conn) { ... }
+
+## Sink Function (Full)
+void process_buffer(char* external_data, int size) { ... }
+</code></pre>
+<p><strong>条件渲染</strong>: 只有存在对应切片时才渲染该 section，避免空 section 干扰 LLM。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="openai-兼容客户端"><a class="header" href="#openai-兼容客户端">OpenAI 兼容客户端</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer3/judge.py</code></p>
+</blockquote>
+<h2 id="概述-5"><a class="header" href="#概述-5">概述</a></h2>
+<p><code>LLMJudge</code> 封装 OpenAI API 调用，支持任何 OpenAI 兼容的 LLM 服务。</p>
+<h2 id="类接口-1"><a class="header" href="#类接口-1">类接口</a></h2>
+<pre><code class="language-python">class LLMJudge:
+    def __init__(
+        self,
+        model: str = "gpt-4o",           # 模型名称
+        api_key: str | None = None,       # API Key (默认从环境变量)
+        base_url: str | None = None,      # API Base URL (默认从环境变量)
+        temperature: float = 0.1,         # 低温 → 更确定性的输出
+        max_tokens: int = 2048,           # 最大输出 token 数
+    )
+    def judge(self, anchor: Anchor, slicing: SlicingResult) -&gt; LLMResult
+</code></pre>
+<h2 id="初始化"><a class="header" href="#初始化">初始化</a></h2>
+<p>API Key 和 Base URL 的优先级：</p>
+<pre><code class="language-python">key = api_key or os.environ.get("OPENAI_API_KEY", "")
+url = base_url or os.environ.get("OPENAI_BASE_URL", None)
+
+client_kwargs = {"api_key": key}
+if url:
+    client_kwargs["base_url"] = url
+
+self.client = OpenAI(**client_kwargs)
+</code></pre>
+<div class="table-wrapper"><table><thead><tr><th>来源</th><th>优先级</th></tr></thead><tbody>
+<tr><td>构造函数参数</td><td>最高</td></tr>
+<tr><td>环境变量 <code>OPENAI_API_KEY</code> / <code>OPENAI_BASE_URL</code></td><td>次高</td></tr>
+</tbody></table>
+</div>
+<p>这使得以下用法都有效：</p>
+<pre><code class="language-python"># GPT-4o
+LLMJudge(model="gpt-4o", api_key="sk-...")
+
+# DeepSeek
+LLMJudge(model="deepseek-chat", api_key="...", base_url="https://api.deepseek.com/v1")
+
+# 本地 Ollama
+LLMJudge(model="llama3", api_key="ollama", base_url="http://localhost:11434/v1")
+
+# 环境变量
+os.environ["OPENAI_API_KEY"] = "sk-..."
+os.environ["OPENAI_BASE_URL"] = "https://api.deepseek.com/v1"
+LLMJudge(model="deepseek-chat")
+</code></pre>
+<h2 id="judge-流程"><a class="header" href="#judge-流程">judge() 流程</a></h2>
+<pre><code>judge(anchor, slicing)
+  │
+  ├── build_payload(anchor, slicing)    ← 结构化负载
+  ├── build_user_prompt(payload)        ← 用户提示文本
+  │
+  ├── client.chat.completions.create(
+  │       model=self.model,
+  │       messages=[
+  │           {"role": "system", "content": SYSTEM_PROMPT},
+  │           {"role": "user",   "content": user_prompt},
+  │       ],
+  │       temperature=0.1,    ← 低温: 更确定性
+  │       max_tokens=2048,
+  │   )
+  │
+  ├── API 调用失败 → 返回 UNCERTAIN (confidence=0.0)
+  │
+  └── _parse_response(raw_text, anchor)
+       ├── 清理 markdown 代码块包裹
+       ├── json.loads() 解析
+       ├── 提取 is_vulnerable, confidence, reason, cwe
+       ├── confidence &lt; 0.3 → UNCERTAIN
+       └── 返回 LLMResult
+</code></pre>
+<h2 id="响应解析"><a class="header" href="#响应解析">响应解析</a></h2>
+<h3 id="markdown-清理"><a class="header" href="#markdown-清理">Markdown 清理</a></h3>
+<p>LLM 有时返回 markdown 包裹的 JSON：</p>
+<pre><code>```json
+{"is_vulnerable": true, ...}
+```
+</code></pre>
+<p><code>_parse_response()</code> 处理这种情况：</p>
+<pre><code class="language-python">if text.startswith("```"):
+    lines = text.split("\n")
+    text = "\n".join(lines[1:])  # 去除首行 ```json
+if text.endswith("```"):
+    text = text[:-3]            # 去除末行 ```
+</code></pre>
+<h3 id="json-解析失败"><a class="header" href="#json-解析失败">JSON 解析失败</a></h3>
+<p>如果 LLM 输出不是有效 JSON，返回：</p>
+<pre><code class="language-python">LLMResult(
+    verdict=Verdict.UNCERTAIN,
+    confidence=0.0,
+    reason="Failed to parse LLM response",
+    raw_response=raw_text,  # 保留原始文本用于调试
+)
+</code></pre>
+<h3 id="置信度阈值"><a class="header" href="#置信度阈值">置信度阈值</a></h3>
+<pre><code class="language-python">verdict = Verdict.VULNERABLE if is_vuln else Verdict.SAFE
+if confidence &lt; 0.3:
+    verdict = Verdict.UNCERTAIN
+</code></pre>
+<p><strong>阈值选择理由</strong>:</p>
+<ul>
+<li><code>0.3</code> 以下意味着 LLM 对自己的判断几乎没有信心</li>
+<li>实践中发现 LLM 在不确定时倾向于输出 <code>false</code> (偏向 safe)，此时 <code>confidence</code> 通常很低</li>
+<li>0.3 是经验值，未来可能需要根据模型调整</li>
+</ul>
+<h2 id="温度参数"><a class="header" href="#温度参数">温度参数</a></h2>
+<p><code>temperature=0.1</code> 是刻意选择的低值：</p>
+<ul>
+<li>安全审计需要确定性判断，不需要创造性</li>
+<li>低温度减少同一漏洞在不同次调用中得出不同裁定的概率</li>
+<li>完全 <code>0.0</code> 可能导致某些 API 的边界行为，<code>0.1</code> 更安全</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="pipeline-与-cli"><a class="header" href="#pipeline-与-cli">Pipeline 与 CLI</a></h1>
+<h2 id="pipeline-编排"><a class="header" href="#pipeline-编排">Pipeline 编排</a></h2>
+<blockquote>
+<p>源码: <code>src/agentsast/pipeline/engine.py</code></p>
+</blockquote>
+<h3 id="pipeline-类"><a class="header" href="#pipeline-类">Pipeline 类</a></h3>
+<p><code>Pipeline</code> 是三层架构的编排器，串联 L1 → L2 → L3：</p>
+<pre><code class="language-python">class Pipeline:
+    def __init__(
+        self,
+        tools: list[str] | None = None,       # L1 工具列表
+        semgrep_config: str = "p/c",           # Semgrep 配置
+        max_call_depth: int = 2,               # L2 切片深度
+        llm_model: str = "gpt-4o",             # L3 模型
+        llm_api_key: str | None = None,        # L3 API Key
+        llm_base_url: str | None = None,       # L3 Base URL
+        skip_llm: bool = False,                # 跳过 L3
+    )
+</code></pre>
+<h3 id="run-执行流程"><a class="header" href="#run-执行流程">run() 执行流程</a></h3>
+<pre><code>run(target, project_root)
+  │
+  ├── === Layer 1: SAST Anchor Scanning ===
+  │   ├── layer1_scan(target, tools, config)
+  │   ├── anchors = [Anchor, ...]
+  │   └── 无锚点 → 直接返回空结果
+  │
+  ├── === Layer 2: Context Slicing ===
+  │   ├── SlicingEngine(max_call_depth)
+  │   └── 对每个 anchor:
+  │       ├── engine.slice_anchor(anchor, project_root)
+  │       ├── 成功 → (anchor, slicing) 加入 sliced_anchors
+  │       └── 失败 → 跳过, 记录日志
+  │
+  ├── skip_llm? ── Yes ──→ 组装结果 (llm=None), 直接返回
+  │
+  └── === Layer 3: LLM Judgment ===
+      ├── LLMJudge(model, api_key, base_url)
+      └── 对每个 (anchor, slicing):
+          ├── judge.judge(anchor, slicing)
+          ├── 成功 → 按 verdict 计数
+          └── 失败 → uncertain += 1, llm 字段标记失败
+</code></pre>
+<h3 id="容错设计-1"><a class="header" href="#容错设计-1">容错设计</a></h3>
+<p>Pipeline 中每一层都有独立的容错：</p>
+<pre><code class="language-python"># L1: 单个扫描器失败不影响其他
+for scanner in scanners:
+    try:
+        anchors = scanner.scan(target)
+    except Exception:
+        continue
+
+# L2: 单个锚点切片失败不影响其他
+for anchor in anchors:
+    try:
+        slicing = engine.slice_anchor(anchor)
+    except Exception:
+        continue
+
+# L3: 单个锚点 LLM 判定失败不影响其他
+for anchor, slicing in sliced_anchors:
+    try:
+        llm_result = judge.judge(anchor, slicing)
+    except Exception:
+        result.uncertain += 1
+</code></pre>
+<p><strong>核心原则</strong>: 任何单点失败不阻塞 Pipeline，最终总是产出完整结果。</p>
+<h3 id="pipelineresult"><a class="header" href="#pipelineresult">PipelineResult</a></h3>
+<pre><code class="language-python">@dataclass
+class PipelineResult:
+    target: str              # 扫描目标路径
+    total_anchors: int = 0   # L1 锚点总数
+    results: list[dict]      # 每个锚点的完整结果
+    vulnerable: int = 0      # L3 裁定: 漏洞数
+    safe: int = 0            # L3 裁定: 安全数
+    uncertain: int = 0       # L3 裁定: 不确定数
+</code></pre>
+<p>每个 <code>results</code> 条目结构：</p>
+<pre><code class="language-python">{
+    "anchor": anchor.to_dict(),
+    "slicing": slicing.to_dict(),
+    "llm": llm_result.to_dict() | None | {"verdict": "uncertain", ...},
+}
+</code></pre>
+<p>序列化方法：</p>
+<ul>
+<li><code>to_dict()</code> → Python 字典</li>
+<li><code>to_json(indent=2)</code> → JSON 字符串</li>
+</ul>
+<h2 id="cli"><a class="header" href="#cli">CLI</a></h2>
+<blockquote>
+<p>源码: <code>src/agentsast/cli.py</code></p>
+</blockquote>
+<h3 id="入口点"><a class="header" href="#入口点">入口点</a></h3>
+<p>通过 <code>pyproject.toml</code> 注册：</p>
+<pre><code class="language-toml">[project.scripts]
+agentsast = "agentsast.cli:main"
+</code></pre>
+<p>安装后可直接执行 <code>agentsast</code> 命令。</p>
+<h3 id="click-命令"><a class="header" href="#click-命令">Click 命令</a></h3>
+<pre><code class="language-python">@click.command()
+@click.argument("target", type=click.Path(exists=True))
+@click.option("--project-root", ...)
+@click.option("--tools", "-t", multiple=True, default=["semgrep", "flawfinder"])
+@click.option("--semgrep-config", default="p/c")
+@click.option("--max-call-depth", default=2, type=int)
+@click.option("--llm-model", default="gpt-4o")
+@click.option("--llm-api-key", envvar="OPENAI_API_KEY")
+@click.option("--llm-base-url", envvar="OPENAI_BASE_URL")
+@click.option("--skip-llm", is_flag=True)
+@click.option("--output", "-o", type=click.Path())
+@click.option("--verbose", "-v", is_flag=True)
+def main(...)
+</code></pre>
+<h3 id="rich-输出"><a class="header" href="#rich-输出">Rich 输出</a></h3>
+<p>CLI 使用 Rich 库生成终端输出：</p>
+<ul>
+<li><strong>表格</strong>: <code>Table</code> 展示每个锚点的文件、行号、工具、CWE、裁定、置信度、理由</li>
+<li><strong>颜色编码</strong>: VULNERABLE=红色, SAFE=绿色, UNCERTAIN=黄色, SKIPPED=灰色</li>
+<li><strong>摘要</strong>: 底部显示统计摘要</li>
+</ul>
+<pre><code>┌──────────────┬──────┬─────────────┬─────────┬────────────┬────────────┬──────────────────┐
+│ File         │ Line │ Tool        │ CWE     │ Verdict    │ Confidence │ Reason           │
+├──────────────┼──────┼─────────────┼─────────┼────────────┼────────────┼──────────────────┤
+│ vuln.c       │   17 │ Flawfinder  │ CWE-120 │ VULNERABLE │        95% │ No bounds check… │
+│ safe.c       │   14 │ Flawfinder  │ CWE-120 │ SAFE       │        88% │ Has size check…  │
+└──────────────┴──────┴─────────────┴─────────┴────────────┴────────────┴──────────────────┘
+
+Summary: 2 anchors → 1 vulnerable, 1 safe, 0 uncertain
+</code></pre>
+<h3 id="日志系统"><a class="header" href="#日志系统">日志系统</a></h3>
+<p><code>--verbose</code> 开启 DEBUG 级别日志，使用 Rich 的 <code>RichHandler</code> 格式化输出（含 traceback）。</p>
+<h3 id="json-输出"><a class="header" href="#json-输出">JSON 输出</a></h3>
+<p><code>--output results.json</code> 将完整结果写入文件，使用 <code>PipelineResult.to_json()</code> 序列化。</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="数据模型参考"><a class="header" href="#数据模型参考">数据模型参考</a></h1>
+<p>本文档汇总 AgentSAST 全部数据模型，作为快速查阅手册。</p>
+<h2 id="layer-1-模型"><a class="header" href="#layer-1-模型">Layer 1 模型</a></h2>
+<h3 id="severity-layer1modelspy"><a class="header" href="#severity-layer1modelspy">Severity (<code>layer1/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>值</th><th>SARIF 映射</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>ERROR</code></td><td><code>error</code></td><td>确认漏洞</td></tr>
+<tr><td><code>WARNING</code></td><td><code>warning</code></td><td>可疑</td></tr>
+<tr><td><code>NOTE</code></td><td><code>note</code></td><td>信息性</td></tr>
+<tr><td><code>NONE</code></td><td><code>none</code></td><td>无等级</td></tr>
+</tbody></table>
+</div>
+<h3 id="location-layer1modelspy"><a class="header" href="#location-layer1modelspy">Location (<code>layer1/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>file</code></td><td><code>Path</code></td><td>(必填)</td><td>文件路径</td></tr>
+<tr><td><code>line</code></td><td><code>int</code></td><td>(必填)</td><td>起始行号 (1-indexed)</td></tr>
+<tr><td><code>col</code></td><td><code>int</code></td><td><code>0</code></td><td>起始列号</td></tr>
+<tr><td><code>end_line</code></td><td><code>int</code></td><td><code>0</code></td><td>结束行号</td></tr>
+<tr><td><code>end_col</code></td><td><code>int</code></td><td><code>0</code></td><td>结束列号</td></tr>
+</tbody></table>
+</div>
+<h3 id="anchor-layer1modelspy"><a class="header" href="#anchor-layer1modelspy">Anchor (<code>layer1/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>rule_id</code></td><td><code>str</code></td><td>(必填)</td><td>规则 ID</td></tr>
+<tr><td><code>tool</code></td><td><code>str</code></td><td>(必填)</td><td>工具名</td></tr>
+<tr><td><code>severity</code></td><td><code>Severity</code></td><td>(必填)</td><td>严重等级</td></tr>
+<tr><td><code>message</code></td><td><code>str</code></td><td>(必填)</td><td>告警描述</td></tr>
+<tr><td><code>location</code></td><td><code>Location</code></td><td>(必填)</td><td>代码位置</td></tr>
+<tr><td><code>cwe</code></td><td><code>str</code></td><td><code>""</code></td><td>CWE 编号</td></tr>
+<tr><td><code>sink_function</code></td><td><code>str</code></td><td><code>""</code></td><td>危险函数名</td></tr>
+<tr><td><code>sink_params</code></td><td><code>list[str]</code></td><td><code>[]</code></td><td>数据流参数</td></tr>
+<tr><td><code>raw_sarif</code></td><td><code>dict</code></td><td><code>{}</code></td><td>原始 SARIF 结果</td></tr>
+</tbody></table>
+</div>
+<h2 id="layer-2-模型"><a class="header" href="#layer-2-模型">Layer 2 模型</a></h2>
+<h3 id="codeslice-layer2modelspy"><a class="header" href="#codeslice-layer2modelspy">CodeSlice (<code>layer2/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>file</code></td><td><code>Path</code></td><td>(必填)</td><td>源文件路径</td></tr>
+<tr><td><code>start_line</code></td><td><code>int</code></td><td>(必填)</td><td>起始行号</td></tr>
+<tr><td><code>end_line</code></td><td><code>int</code></td><td>(必填)</td><td>结束行号</td></tr>
+<tr><td><code>content</code></td><td><code>str</code></td><td>(必填)</td><td>代码内容</td></tr>
+<tr><td><code>slice_type</code></td><td><code>str</code></td><td><code>"unknown"</code></td><td>切片类型</td></tr>
+<tr><td><code>label</code></td><td><code>str</code></td><td><code>""</code></td><td>可读标签</td></tr>
+</tbody></table>
+</div>
+<h3 id="slicingresult-layer2modelspy"><a class="header" href="#slicingresult-layer2modelspy">SlicingResult (<code>layer2/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>anchor_file</code></td><td><code>Path</code></td><td>(必填)</td><td>锚点文件</td></tr>
+<tr><td><code>anchor_line</code></td><td><code>int</code></td><td>(必填)</td><td>锚点行号</td></tr>
+<tr><td><code>struct_defs</code></td><td><code>list[CodeSlice]</code></td><td><code>[]</code></td><td>结构体定义切片</td></tr>
+<tr><td><code>dataflow_slices</code></td><td><code>list[CodeSlice]</code></td><td><code>[]</code></td><td>数据流切片</td></tr>
+<tr><td><code>caller_slices</code></td><td><code>list[CodeSlice]</code></td><td><code>[]</code></td><td>调用者切片</td></tr>
+<tr><td><code>callee_slices</code></td><td><code>list[CodeSlice]</code></td><td><code>[]</code></td><td>被调用者切片</td></tr>
+<tr><td><code>raw_function</code></td><td><code>CodeSlice | None</code></td><td><code>None</code></td><td>完整函数体</td></tr>
+</tbody></table>
+</div>
+<h2 id="layer-3-模型"><a class="header" href="#layer-3-模型">Layer 3 模型</a></h2>
+<h3 id="verdict-layer3modelspy"><a class="header" href="#verdict-layer3modelspy">Verdict (<code>layer3/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>VULNERABLE</code></td><td>确认真漏洞</td></tr>
+<tr><td><code>SAFE</code></td><td>确认误报</td></tr>
+<tr><td><code>UNCERTAIN</code></td><td>无法判定</td></tr>
+</tbody></table>
+</div>
+<h3 id="llmresult-layer3modelspy"><a class="header" href="#llmresult-layer3modelspy">LLMResult (<code>layer3/models.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>anchor_file</code></td><td><code>str</code></td><td>(必填)</td><td>锚点文件</td></tr>
+<tr><td><code>anchor_line</code></td><td><code>int</code></td><td>(必填)</td><td>锚点行号</td></tr>
+<tr><td><code>verdict</code></td><td><code>Verdict</code></td><td>(必填)</td><td>裁定结果</td></tr>
+<tr><td><code>confidence</code></td><td><code>float</code></td><td>(必填)</td><td>置信度 [0.0, 1.0]</td></tr>
+<tr><td><code>reason</code></td><td><code>str</code></td><td>(必填)</td><td>推理过程</td></tr>
+<tr><td><code>cwe</code></td><td><code>str</code></td><td><code>""</code></td><td>CWE 编号</td></tr>
+<tr><td><code>raw_response</code></td><td><code>str</code></td><td><code>""</code></td><td>LLM 原始响应</td></tr>
+</tbody></table>
+</div>
+<h2 id="pipeline-模型"><a class="header" href="#pipeline-模型">Pipeline 模型</a></h2>
+<h3 id="pipelineresult-pipelineenginepy"><a class="header" href="#pipelineresult-pipelineenginepy">PipelineResult (<code>pipeline/engine.py</code>)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>target</code></td><td><code>str</code></td><td>(必填)</td><td>扫描目标路径</td></tr>
+<tr><td><code>total_anchors</code></td><td><code>int</code></td><td><code>0</code></td><td>L1 锚点总数</td></tr>
+<tr><td><code>results</code></td><td><code>list[dict]</code></td><td><code>[]</code></td><td>每锚点完整结果</td></tr>
+<tr><td><code>vulnerable</code></td><td><code>int</code></td><td><code>0</code></td><td>VULNERABLE 计数</td></tr>
+<tr><td><code>safe</code></td><td><code>int</code></td><td><code>0</code></td><td>SAFE 计数</td></tr>
+<tr><td><code>uncertain</code></td><td><code>int</code></td><td><code>0</code></td><td>UNCERTAIN 计数</td></tr>
+</tbody></table>
+</div>
+<h2 id="跨层数据流"><a class="header" href="#跨层数据流">跨层数据流</a></h2>
+<pre><code>Anchor (L1)
+  │
+  ├──→ SlicingEngine.slice_anchor()
+  │      │
+  │      ▼
+  │    SlicingResult (L2)
+  │
+  ├──→ LLMJudge.judge()
+  │      │
+  │      ▼
+  │    LLMResult (L3)
+  │
+  └──→ Pipeline results 条目:
+       {
+         "anchor": Anchor.to_dict(),
+         "slicing": SlicingResult.to_dict(),
+         "llm": LLMResult.to_dict() | None
+       }
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="部署与-github-pages"><a class="header" href="#部署与-github-pages">部署与 GitHub Pages</a></h1>
+<h2 id="本地构建文档"><a class="header" href="#本地构建文档">本地构建文档</a></h2>
+<h3 id="安装-mdbook"><a class="header" href="#安装-mdbook">安装 mdBook</a></h3>
+<pre><code class="language-bash"># 使用 cargo (Rust 包管理器)
+cargo install mdbook
+
+# 或使用预编译二进制
+# https://github.com/rust-lang/mdBook/releases
+</code></pre>
+<h3 id="构建与预览"><a class="header" href="#构建与预览">构建与预览</a></h3>
+<pre><code class="language-bash">cd book
+
+# 构建 HTML 到 book/dist/
+mdbook build
+
+# 本地预览 (自动刷新)
+mdbook serve
+# 浏览器访问 http://localhost:3000
+</code></pre>
+<h2 id="github-pages-自动部署"><a class="header" href="#github-pages-自动部署">GitHub Pages 自动部署</a></h2>
+<h3 id="配置步骤"><a class="header" href="#配置步骤">配置步骤</a></h3>
+<ol>
+<li>在仓库中创建 <code>.github/workflows/book.yml</code>：</li>
+</ol>
+<pre><code class="language-yaml">name: Deploy Book
+on:
+  push:
+    branches: [main]
+    paths: ["book/**"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mdBook
+        run: cargo install mdbook
+      - name: Build book
+        run: cd book &amp;&amp; mdbook build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: book/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+</code></pre>
+<ol start="2">
+<li>
+<p>在 GitHub 仓库设置中：</p>
+<ul>
+<li>Settings → Pages → Source: <strong>GitHub Actions</strong></li>
+<li>触发一次 push 到 <code>main</code> 分支的 <code>book/</code> 目录变更</li>
+</ul>
+</li>
+<li>
+<p>访问地址：<code>https://&lt;username&gt;.github.io/AgentSAST/</code></p>
+</li>
+</ol>
+<h3 id="booktoml-配置说明"><a class="header" href="#booktoml-配置说明">book.toml 配置说明</a></h3>
+<pre><code class="language-toml">[book]
+title = "AgentSAST"
+language = "zh-CN"          # 中文文档
+src = "src"                  # Markdown 源文件目录
+
+[build]
+build-dir = "dist"           # 输出目录 (GitHub Actions 使用)
+
+[output.html]
+default-theme = "navy"       # 深色主题
+git-repository-url = "https://github.com/atituiset/AgentSAST"
+</code></pre>
+<h2 id="自定义域名-可选"><a class="header" href="#自定义域名-可选">自定义域名 (可选)</a></h2>
+<ol>
+<li>在 <code>book/src/</code> 下创建 <code>CNAME</code> 文件，内容为自定义域名</li>
+<li>在 DNS 服务商添加 CNAME 记录指向 <code>&lt;username&gt;.github.io</code></li>
+<li>在 GitHub Settings → Pages → Custom domain 填入域名</li>
+</ol>
+<h2 id="其他部署方式"><a class="header" href="#其他部署方式">其他部署方式</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>方式</th><th>命令</th><th>说明</th></tr></thead><tbody>
+<tr><td>Netlify</td><td>直接链接仓库</td><td>自动识别 mdBook</td></tr>
+<tr><td>Cloudflare Pages</td><td><code>cd book &amp;&amp; mdbook build</code></td><td>输出目录 <code>dist</code></td></tr>
+<tr><td>本地静态服务</td><td><code>python -m http.server -d book/dist</code></td><td>快速分享</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="路线图与已知局限"><a class="header" href="#路线图与已知局限">路线图与已知局限</a></h1>
+<h2 id="版本路线图"><a class="header" href="#版本路线图">版本路线图</a></h2>
+<h3 id="v01-当前"><a class="header" href="#v01-当前">v0.1 (当前)</a></h3>
+<ul>
+<li><input disabled="" type="checkbox" checked=""/>
+L1: Semgrep + Flawfinder + 内置模式扫描器</li>
+<li><input disabled="" type="checkbox" checked=""/>
+L2: Tree-sitter AST 解析 + 后向切片 + 结构体提取 + 调用图</li>
+<li><input disabled="" type="checkbox" checked=""/>
+L3: OpenAI 兼容 LLM 裁判 + 反幻觉提示</li>
+<li><input disabled="" type="checkbox" checked=""/>
+Pipeline 编排 + Click CLI</li>
+<li><input disabled="" type="checkbox" checked=""/>
+SARIF v2.1.0 统一输出</li>
+<li><input disabled="" type="checkbox" checked=""/>
+12 个测试用例全部通过</li>
+</ul>
+<h3 id="v02--深度分析"><a class="header" href="#v02--深度分析">v0.2 — 深度分析</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+CodeQL SARIF 集成 (L1 新增扫描器)</li>
+<li><input disabled="" type="checkbox"/>
+Joern CPG 深度切片 (L2 可选后端)</li>
+<li><input disabled="" type="checkbox"/>
+多线程并行扫描</li>
+<li><input disabled="" type="checkbox"/>
+SARIF 结果合并 (跨工具统一输出)</li>
+</ul>
+<h3 id="v03--编译感知"><a class="header" href="#v03--编译感知">v0.3 — 编译感知</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Clang 预处理管线 (宏展开 + 精确类型)</li>
+<li><input disabled="" type="checkbox"/>
+Clang AST dump 解析</li>
+<li><input disabled="" type="checkbox"/>
+编译数据库 (<code>compile_commands.json</code>) 支持</li>
+<li><input disabled="" type="checkbox"/>
+头文件搜索路径配置</li>
+</ul>
+<h3 id="v04--工程化"><a class="header" href="#v04--工程化">v0.4 — 工程化</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+批量扫描 (多目标并行)</li>
+<li><input disabled="" type="checkbox"/>
+增量分析 (仅分析 git diff 变更)</li>
+<li><input disabled="" type="checkbox"/>
+基线管理 (已知误报标记)</li>
+<li><input disabled="" type="checkbox"/>
+结果缓存 (避免重复 LLM 调用)</li>
+<li><input disabled="" type="checkbox"/>
+CI/CD 集成 (GitHub Actions, GitLab CI)</li>
+</ul>
+<h3 id="v05--平台化"><a class="header" href="#v05--平台化">v0.5 — 平台化</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Web 仪表盘 (漏洞管理 + 趋势分析)</li>
+<li><input disabled="" type="checkbox"/>
+GitHub Pull Request 评论集成</li>
+<li><input disabled="" type="checkbox"/>
+SARIF 上传到 GitHub Code Scanning</li>
+<li><input disabled="" type="checkbox"/>
+多语言支持 (Rust, Go, Java)</li>
+<li><input disabled="" type="checkbox"/>
+自定义规则 DSL</li>
+</ul>
+<h2 id="已知局限-1"><a class="header" href="#已知局限-1">已知局限</a></h2>
+<h3 id="tree-sitter-相关"><a class="header" href="#tree-sitter-相关">Tree-sitter 相关</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>局限</th><th>影响</th><th>计划解决</th></tr></thead><tbody>
+<tr><td>不展开 C 宏</td><td>宏内危险调用不可见</td><td>v0.3 Clang 预处理</td></tr>
+<tr><td>无类型推断</td><td><code>void*</code> 参数无法确定实际类型</td><td>v0.3 Clang AST</td></tr>
+<tr><td>匿名结构体处理</td><td>部分边缘 case 可能漏提取</td><td>持续改进</td></tr>
+<tr><td>条件编译 <code>#ifdef</code></td><td>所有分支都被解析</td><td>v0.3 Clang 预处理</td></tr>
+</tbody></table>
+</div>
+<h3 id="切片引擎相关"><a class="header" href="#切片引擎相关">切片引擎相关</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>局限</th><th>影响</th><th>计划解决</th></tr></thead><tbody>
+<tr><td>指针别名追踪 1-2 层</td><td>多级间接赋值可能遗漏</td><td>v0.2 Joern CPG</td></tr>
+<tr><td>跨文件搜索全量扫描</td><td>大项目性能差</td><td>v0.4 索引优化</td></tr>
+<tr><td>C++ 虚函数/函数指针</td><td>无法追踪动态分发</td><td>v0.2 Joern CPG</td></tr>
+<tr><td>全局变量切片</td><td>当前仅追踪局部变量</td><td>v0.2 改进</td></tr>
+</tbody></table>
+</div>
+<h3 id="llm-裁判相关"><a class="header" href="#llm-裁判相关">LLM 裁判相关</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>局限</th><th>影响</th><th>计划解决</th></tr></thead><tbody>
+<tr><td>幻觉未完全消除</td><td>可能误判</td><td>多轮验证 + 自一致性</td></tr>
+<tr><td>无多轮对话</td><td>复杂漏洞需追问</td><td>v0.3 对话模式</td></tr>
+<tr><td>Token 成本</td><td>大项目全量扫描昂贵</td><td>v0.4 缓存 + 增量</td></tr>
+<tr><td>置信度阈值固定</td><td>不同项目可能需要不同阈值</td><td>v0.4 可配置阈值</td></tr>
+</tbody></table>
+</div>
+<h3 id="flawfinder内置扫描器相关"><a class="header" href="#flawfinder内置扫描器相关">Flawfinder/内置扫描器相关</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>局限</th><th>影响</th><th>计划解决</th></tr></thead><tbody>
+<tr><td>无数据流分析</td><td>高误报率 (设计权衡)</td><td>L2+L3 裁定</td></tr>
+<tr><td>函数级匹配</td><td>无法检测逻辑漏洞</td><td>v0.2 CodeQL</td></tr>
+<tr><td>23 个危险函数</td><td>覆盖不全</td><td>社区扩展</td></tr>
+</tbody></table>
+</div>
+<h2 id="技术债务"><a class="header" href="#技术债务">技术债务</a></h2>
+<ol>
+<li><code>_file_cache</code> 无失效机制 — 长会话中文件修改后缓存不一致</li>
+<li><code>SlicingResult.to_dict()</code> 不包含 <code>callee_slices</code> — 序列化不完整</li>
+<li>跨文件搜索的 <code>rglob("*")</code> 性能 — 大项目需要文件索引</li>
+<li>无配置文件 — 所有参数通过 CLI 传递，缺少 <code>.agentsast.toml</code></li>
+<li>无日志持久化 — 仅终端输出，无文件日志</li>
+</ol>
+<h2 id="贡献指南"><a class="header" href="#贡献指南">贡献指南</a></h2>
+<p>欢迎贡献！优先级最高的改进方向：</p>
+<ol>
+<li><strong>CodeQL SARIF 解析器</strong> — 扩展 L1 覆盖率</li>
+<li><strong>配置文件支持</strong> — <code>.agentsast.toml</code> 项目配置</li>
+<li><strong>增量分析</strong> — <code>git diff</code> 模式，仅分析变更代码</li>
+<li><strong>结果缓存</strong> — 避免重复 LLM 调用，降低成本</li>
+</ol>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>

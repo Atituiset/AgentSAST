@@ -1,0 +1,325 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN" class="navy" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Flawfinder 扫描器 - AgentSAST</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="AI-Augmented Static Analysis for C/C++">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "navy";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 简介</a></li><li class="chapter-item expanded "><a href="quick-start.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="architecture.html"><strong aria-hidden="true">3.</strong> 整体架构</a></li><li class="chapter-item expanded "><a href="layer1.html"><strong aria-hidden="true">4.</strong> Layer 1: 锚点识别</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer1-models.html"><strong aria-hidden="true">4.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer1-semgrep.html"><strong aria-hidden="true">4.2.</strong> Semgrep 扫描器</a></li><li class="chapter-item expanded "><a href="layer1-flawfinder.html" class="active"><strong aria-hidden="true">4.3.</strong> Flawfinder 扫描器</a></li><li class="chapter-item expanded "><a href="layer1-scanner.html"><strong aria-hidden="true">4.4.</strong> 统一扫描入口</a></li></ol></li><li class="chapter-item expanded "><a href="layer2.html"><strong aria-hidden="true">5.</strong> Layer 2: 切片引擎</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer2-models.html"><strong aria-hidden="true">5.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer2-parser.html"><strong aria-hidden="true">5.2.</strong> AST 解析器</a></li><li class="chapter-item expanded "><a href="layer2-slicer.html"><strong aria-hidden="true">5.3.</strong> 切片算法</a></li></ol></li><li class="chapter-item expanded "><a href="layer3.html"><strong aria-hidden="true">6.</strong> Layer 3: LLM 裁判</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer3-models.html"><strong aria-hidden="true">6.1.</strong> 数据模型</a></li><li class="chapter-item expanded "><a href="layer3-prompt.html"><strong aria-hidden="true">6.2.</strong> 反幻觉提示工程</a></li><li class="chapter-item expanded "><a href="layer3-judge.html"><strong aria-hidden="true">6.3.</strong> OpenAI 兼容客户端</a></li></ol></li><li class="chapter-item expanded "><a href="pipeline.html"><strong aria-hidden="true">7.</strong> Pipeline 与 CLI</a></li><li class="chapter-item expanded "><a href="data-models.html"><strong aria-hidden="true">8.</strong> 数据模型参考</a></li><li class="chapter-item expanded "><a href="deployment.html"><strong aria-hidden="true">9.</strong> 部署与 GitHub Pages</a></li><li class="chapter-item expanded "><a href="roadmap.html"><strong aria-hidden="true">10.</strong> 路线图与已知局限</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">AgentSAST</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/atituiset/AgentSAST" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/atituiset/AgentSAST/edit/main/book/src/src/layer1-flawfinder.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="flawfinder-扫描器"><a class="header" href="#flawfinder-扫描器">Flawfinder 扫描器</a></h1>
+<blockquote>
+<p>源码: <code>src/agentsast/layer1/flawfinder.py</code></p>
+</blockquote>
+<h2 id="概述"><a class="header" href="#概述">概述</a></h2>
+<p><code>FlawfinderScanner</code> 提供两种模式：</p>
+<ol>
+<li><strong>原生 Flawfinder</strong> — 调用系统安装的 Flawfinder CLI，获取 SARIF 输出</li>
+<li><strong>内置模式扫描器</strong> — Flawfinder 未安装时的后备方案，基于正则匹配危险函数</li>
+</ol>
+<h2 id="危险函数映射表"><a class="header" href="#危险函数映射表">危险函数映射表</a></h2>
+<p>内置 23 个危险函数到 CWE 的映射：</p>
+<pre><code class="language-python">DANGER_FUNCTIONS = {
+    # CWE-120: 缓冲区溢出 (11 个)
+    "memcpy": "CWE-120", "strcpy": "CWE-120", "strcat": "CWE-120",
+    "gets": "CWE-120", "sprintf": "CWE-120", "scanf": "CWE-120",
+    "vsprintf": "CWE-120", "strncat": "CWE-120", "strncpy": "CWE-120",
+    "snprintf": "CWE-120",
+    # CWE-787: 堆溢出 (2 个)
+    "malloc": "CWE-787", "realloc": "CWE-787",
+    # CWE-415: 双重释放 (1 个)
+    "free": "CWE-415",
+    # CWE-78: 命令注入 (7 个)
+    "system": "CWE-78", "popen": "CWE-78",
+    "execl": "CWE-78", "execle": "CWE-78", "execlp": "CWE-78",
+    "execv": "CWE-78", "execve": "CWE-78", "execvp": "CWE-78",
+    # CWE-134: 格式化字符串 (3 个)
+    "printf": "CWE-134", "fprintf": "CWE-134", "syslog": "CWE-134",
+}
+</code></pre>
+<h2 id="执行流程"><a class="header" href="#执行流程">执行流程</a></h2>
+<pre><code>scan(target)
+  │
+  ├── is_available()? ── Yes ──→ 执行 Flawfinder CLI
+  │   │                           │
+  │   │                           ├── flawfinder --minlevel 3 --sarif &lt;target&gt;
+  │   │                           │
+  │   │                           └── _parse_sarif_output(stdout)
+  │   │                                ├── 解析 SARIF JSON
+  │   │                                ├── 提取 location, message, CWE
+  │   │                                └── _extract_sink_from_message()
+  │   │
+  │   └── No ──→ _pattern_scan(target)
+  │                │
+  │                ├── _collect_source_files(target)  ← 递归收集 C/C++ 文件
+  │                │
+  │                ├── 正则匹配: \b(func1|func2|...)\s*\(
+  │                │
+  │                └── 为每个匹配生成 Anchor
+  │                     ├── rule_id = "agentsast-builtin-{func_name}"
+  │                     ├── tool = "AgentSAST-Pattern"
+  │                     └── severity = WARNING (固定)
+</code></pre>
+<h2 id="内置模式扫描器详解"><a class="header" href="#内置模式扫描器详解">内置模式扫描器详解</a></h2>
+<h3 id="文件收集"><a class="header" href="#文件收集">文件收集</a></h3>
+<p><code>_collect_source_files()</code> 支持扫描目录或单文件，匹配扩展名：</p>
+<pre><code class="language-python">extensions = {".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh", ".hxx"}
+</code></pre>
+<h3 id="正则匹配"><a class="header" href="#正则匹配">正则匹配</a></h3>
+<pre><code class="language-python">func_pattern = re.compile(
+    r"\b(" + "|".join(re.escape(f) for f in DANGER_FUNCTIONS) + r")\s*\("
+)
+</code></pre>
+<p>这个模式：</p>
+<ul>
+<li>使用 <code>\b</code> 词边界防止子串匹配 (如 <code>my_memcpy</code> 不会误匹配 <code>memcpy</code>)</li>
+<li>匹配函数名后紧跟 <code>(</code> 的调用形式</li>
+<li><code>re.escape</code> 处理函数名中的特殊字符</li>
+</ul>
+<h3 id="行号计算"><a class="header" href="#行号计算">行号计算</a></h3>
+<pre><code class="language-python">line_no = content[: match.start()].count("\n") + 1
+</code></pre>
+<p>通过统计匹配位置之前的换行符数量来确定行号 (1-indexed)。</p>
+<h2 id="flawfinder-cli-参数"><a class="header" href="#flawfinder-cli-参数">Flawfinder CLI 参数</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>参数</th><th>默认值</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>min_level</code></td><td>3</td><td>最低风险等级 (1-5, 5 最严重)</td></tr>
+<tr><td><code>timeout</code></td><td>300</td><td>执行超时 (秒)</td></tr>
+</tbody></table>
+</div>
+<h2 id="cwe-提取策略"><a class="header" href="#cwe-提取策略">CWE 提取策略</a></h2>
+<p><code>_extract_cwe()</code> 有两层回退：</p>
+<ol>
+<li>优先从 <code>properties.tags</code> 中提取 <code>CWE-*</code> 标签</li>
+<li>回退到从 <code>message.text</code> 中正则匹配 <code>CWE-\d+</code></li>
+</ol>
+<h2 id="局限性"><a class="header" href="#局限性">局限性</a></h2>
+<p>Flawfinder 本质是危险函数字典扫描器，与内置模式扫描器同一级别：</p>
+<ul>
+<li><strong>无数据流分析</strong> — 不知道参数来源和大小</li>
+<li><strong>无路径敏感</strong> — 不考虑分支条件</li>
+<li><strong>高误报率</strong> — 这是设计上的权衡，精确率留给 L3</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="layer1-semgrep.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="layer1-scanner.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="layer1-semgrep.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="layer1-scanner.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
