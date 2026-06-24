@@ -5,13 +5,16 @@ import re
 import subprocess
 from pathlib import Path
 
+from .base import ScanContext, register_scanner
 from .models import Anchor, Location, Severity
 
 logger = logging.getLogger(__name__)
 
 
+@register_scanner("flawfinder")
 class FlawfinderScanner:
     NAME = "Flawfinder"
+    requires_compilation = False
 
     DANGER_FUNCTIONS = {
         "memcpy": "CWE-120",
@@ -44,6 +47,10 @@ class FlawfinderScanner:
         self.min_level = min_level
         self.timeout = timeout
 
+    @property
+    def name(self) -> str:
+        return self.NAME
+
     def is_available(self) -> bool:
         try:
             result = subprocess.run(
@@ -56,7 +63,8 @@ class FlawfinderScanner:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
-    def scan(self, target: Path) -> list[Anchor]:
+    def scan(self, ctx) -> list[Anchor]:
+        target = ctx.target if isinstance(ctx, ScanContext) else ctx
         if not self.is_available():
             logger.info(
                 "Flawfinder not found, using built-in pattern scanner"

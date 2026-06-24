@@ -34,3 +34,12 @@ def test_semgrep_is_registered_and_protocol_compatible():
     assert scanner.requires_compilation is False
     assert callable(scanner.is_available)
     assert callable(scanner.scan)
+
+
+def test_flawfinder_is_registered_and_protocol_compatible():
+    from agentsast.layer1.base import SCANNER_REGISTRY, ScanContext
+    from agentsast.layer1.flawfinder import FlawfinderScanner
+    assert "flawfinder" in SCANNER_REGISTRY
+    scanner = SCANNER_REGISTRY["flawfinder"]()
+    assert scanner.name == "Flawfinder"
+    assert scanner.requires_compilation is False
