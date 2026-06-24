@@ -50,6 +50,7 @@ class Pipeline:
         llm_api_key: str | None = None,
         llm_base_url: str | None = None,
         skip_llm: bool = False,
+        compile_db: Path | None = None,
     ):
         self.tools = tools or ["semgrep", "flawfinder"]
         self.semgrep_config = semgrep_config
@@ -58,6 +59,7 @@ class Pipeline:
         self.llm_model = llm_model
         self.llm_api_key = llm_api_key
         self.llm_base_url = llm_base_url
+        self.compile_db = compile_db
 
     def run(
         self,
@@ -69,7 +71,10 @@ class Pipeline:
 
         logger.info("=== Layer 1: SAST Anchor Scanning ===")
         anchors = layer1_scan(
-            target, tools=self.tools, config=self.semgrep_config
+            target,
+            tools=self.tools,
+            config=self.semgrep_config,
+            compile_db=self.compile_db,
         )
         result.total_anchors = len(anchors)
 

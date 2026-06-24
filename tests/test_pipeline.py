@@ -165,3 +165,10 @@ class TestLLMResult:
             reason="Cannot determine",
         )
         assert not result.is_vulnerable
+
+
+class TestPipelineCompileDb:
+    def test_pipeline_accepts_compile_db(self, tmp_path):
+        from agentsast.pipeline.engine import Pipeline
+        p = Pipeline(tools=["semgrep"], compile_db=tmp_path / "cc.json")
+        assert p.compile_db == tmp_path / "cc.json"
