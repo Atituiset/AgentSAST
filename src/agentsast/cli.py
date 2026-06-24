@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
+from .layer1.compile import resolve_compile_commands
 from .pipeline.engine import Pipeline, PipelineResult
 
 console = Console()
@@ -98,6 +99,12 @@ def _print_results(result: PipelineResult):
     type=int,
     help="Max caller/callee slicing depth",
 )
+@click.option("--compile-db", type=click.Path(), default=None,
+              help="Path to compile_commands.json (user-supplied)")
+@click.option("--compile-dir", type=click.Path(), default=None,
+              help="Directory containing compile_commands.json (remote-synced)")
+@click.option("--build-cmd", default=None,
+              help="Build command to generate compile_commands.json via Bear")
 @click.option("--llm-model", default="gpt-4o", help="LLM model name")
 @click.option(
     "--llm-api-key",
@@ -130,6 +137,9 @@ def main(
     tools: tuple[str, ...],
     semgrep_config: str,
     max_call_depth: int,
+    compile_db: str | None,
+    compile_dir: str | None,
+    build_cmd: str | None,
     llm_model: str,
     llm_api_key: str | None,
     llm_base_url: str | None,
@@ -139,6 +149,12 @@ def main(
 ):
     _setup_logging(verbose)
 
+    compile_db_path = resolve_compile_commands(
+        compile_db=Path(compile_db) if compile_db else None,
+        compile_dir=Path(compile_dir) if compile_dir else None,
+        build_cmd=build_cmd,
+    )
+
     pipeline = Pipeline(
         tools=list(tools),
         semgrep_config=semgrep_config,
@@ -147,6 +163,7 @@ def main(
         llm_api_key=llm_api_key,
         llm_base_url=llm_base_url,
         skip_llm=skip_llm,
+        compile_db=compile_db_path,
     )
 
     root = Path(project_root).resolve() if project_root else None
