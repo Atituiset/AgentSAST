@@ -11,10 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 def _region_to_location(phys: dict, default_msg: str = "") -> Location:
+    """从 physicalLocation 构建 Location；缺失 message 时回退到 default_msg。"""
     art = phys.get("artifactLocation", {})
     region = phys.get("region", {})
     uri = art.get("uri", "")
-    fp = Path(str(uri).lstrip("/")) if Path(str(uri)).is_absolute() else Path(uri)
+    fp = Path(uri.lstrip("/"))
     return Location(
         file=fp,
         line=region.get("startLine", 0),
@@ -46,14 +47,14 @@ def _flow_to_path(result: dict) -> list[Location]:
 
 
 def parse_sarif_to_anchors(sarif_path: Path) -> list[Anchor]:
-    with open(sarif_path) as f:
+    with open(sarif_path, encoding="utf-8") as f:
         sarif = json.load(f)
 
     anchors: list[Anchor] = []
     for run in sarif.get("runs", []):
         driver = run.get("tool", {}).get("driver", {})
         tool_name = driver.get("name", "unknown")
-        rules_map = {r["id"]: r for r in driver.get("rules", [])}
+        rules_map = {r["id"]: r for r in driver.get("rules", []) if "id" in r}
 
         for result in run.get("results", []):
             try:
@@ -68,10 +69,16 @@ def parse_sarif_to_anchors(sarif_path: Path) -> list[Anchor]:
                 dataflow = _flow_to_path(result)
                 source = dataflow[0] if dataflow else None
 
+                try:
+                    severity = Severity(result.get("level", "warning"))
+                except ValueError:
+                    severity = Severity.WARNING
+                    logger.warning("Unknown SARIF level %r for %s, defaulting to warning", result.get("level"), rule_id)
+
                 anchors.append(Anchor(
                     rule_id=rule_id,
                     tool=tool_name,
-                    severity=Severity(result.get("level", "warning")),
+                    severity=severity,
                     message=result.get("message", {}).get("text", ""),
                     location=sink,
                     cwe=_extract_cwe(rules_map.get(rule_id, {})),
