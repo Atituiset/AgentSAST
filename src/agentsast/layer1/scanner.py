@@ -3,11 +3,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from .base import ScanContext, SCANNER_REGISTRY
-from .flawfinder import FlawfinderScanner   # import 副作用：触发注册
+from .base import SCANNER_REGISTRY, ScanContext
+from .flawfinder import FlawfinderScanner  # noqa: F401  # import 副作用：触发注册
 from .models import Anchor
 from .sarif_parser import parse_sarif_to_anchors
-from .semgrep import SemgrepScanner          # import 副作用：触发注册
+from .semgrep import SemgrepScanner  # noqa: F401  # import 副作用：触发注册
 
 logger = logging.getLogger(__name__)
 

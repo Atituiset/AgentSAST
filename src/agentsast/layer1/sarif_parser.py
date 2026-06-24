@@ -73,7 +73,11 @@ def parse_sarif_to_anchors(sarif_path: Path) -> list[Anchor]:
                     severity = Severity(result.get("level", "warning"))
                 except ValueError:
                     severity = Severity.WARNING
-                    logger.warning("Unknown SARIF level %r for %s, defaulting to warning", result.get("level"), rule_id)
+                    logger.warning(
+                        "Unknown SARIF level %r for %s, defaulting to warning",
+                        result.get("level"),
+                        rule_id,
+                    )
 
                 anchors.append(Anchor(
                     rule_id=rule_id,

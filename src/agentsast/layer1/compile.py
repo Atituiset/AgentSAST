@@ -1,5 +1,8 @@
 # src/agentsast/layer1/compile.py
-"""compile_commands.json 供应：用户直供(--compile-db/--compile-dir) > 本地生成(--build-cmd via Bear) > None。"""
+"""compile_commands.json 供应策略。
+
+优先级：用户直供(--compile-db/--compile-dir) > 本地生成(--build-cmd via Bear) > None。
+"""
 from __future__ import annotations
 
 import logging

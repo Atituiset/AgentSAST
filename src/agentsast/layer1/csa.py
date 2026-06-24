@@ -8,8 +8,8 @@ import subprocess
 from pathlib import Path
 
 from .base import ScanContext, register_scanner
-from .sarif_parser import parse_sarif_to_anchors
 from .handlers import csa as csa_handler
+from .sarif_parser import parse_sarif_to_anchors
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agentsast.layer1.base import ScanContext, Scanner, register_scanner, SCANNER_REGISTRY
+from agentsast.layer1.base import SCANNER_REGISTRY, ScanContext, register_scanner
 
 
 def test_scan_context_carries_compile_db():
@@ -26,8 +26,7 @@ def test_register_scanner_adds_to_registry():
 
 
 def test_semgrep_is_registered_and_protocol_compatible():
-    from agentsast.layer1.base import SCANNER_REGISTRY, ScanContext
-    from agentsast.layer1.semgrep import SemgrepScanner
+    from agentsast.layer1.base import SCANNER_REGISTRY
     assert "semgrep" in SCANNER_REGISTRY
     scanner = SCANNER_REGISTRY["semgrep"](config="p/c")
     assert scanner.name == "Semgrep"
@@ -37,8 +36,7 @@ def test_semgrep_is_registered_and_protocol_compatible():
 
 
 def test_flawfinder_is_registered_and_protocol_compatible():
-    from agentsast.layer1.base import SCANNER_REGISTRY, ScanContext
-    from agentsast.layer1.flawfinder import FlawfinderScanner
+    from agentsast.layer1.base import SCANNER_REGISTRY
     assert "flawfinder" in SCANNER_REGISTRY
     scanner = SCANNER_REGISTRY["flawfinder"]()
     assert scanner.name == "Flawfinder"
@@ -47,7 +45,7 @@ def test_flawfinder_is_registered_and_protocol_compatible():
 
 def test_scan_skips_compilation_scanner_without_compile_db(monkeypatch, tmp_path):
     from agentsast.layer1 import scanner as scanner_mod
-    from agentsast.layer1.base import register_scanner, ScanContext, SCANNER_REGISTRY
+    from agentsast.layer1.base import SCANNER_REGISTRY, register_scanner
 
     called = {"n": 0}
 

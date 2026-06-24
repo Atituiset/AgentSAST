@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agentsast.layer1.models import Anchor, Location, Severity
 from agentsast.layer1.handlers.csa import enhance_anchor, is_csa_result
+from agentsast.layer1.models import Anchor, Location, Severity
 
 
 def test_is_csa_result_detects_clang():
