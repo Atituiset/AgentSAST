@@ -43,3 +43,25 @@ def test_flawfinder_is_registered_and_protocol_compatible():
     scanner = SCANNER_REGISTRY["flawfinder"]()
     assert scanner.name == "Flawfinder"
     assert scanner.requires_compilation is False
+
+
+def test_scan_skips_compilation_scanner_without_compile_db(monkeypatch, tmp_path):
+    from agentsast.layer1 import scanner as scanner_mod
+    from agentsast.layer1.base import register_scanner, ScanContext, SCANNER_REGISTRY
+
+    called = {"n": 0}
+
+    @register_scanner("fake-compiler")
+    class _FakeCompiler:
+        name = "Fake"
+        requires_compilation = True
+        def is_available(self):
+            return True
+        def scan(self, ctx):
+            called["n"] += 1
+            return []
+
+    anchors = scanner_mod.scan(tmp_path, tools=["fake-compiler"])
+    assert anchors == []
+    assert called["n"] == 0  # 无 compile_db，编译期扫描器被跳过
+    SCANNER_REGISTRY.pop("fake-compiler", None)
