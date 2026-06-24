@@ -4,7 +4,10 @@ import logging
 from pathlib import Path
 
 from .base import SCANNER_REGISTRY, ScanContext
+from .cppcheck import CppcheckScanner  # noqa: F401  # import 副作用：触发注册
+from .csa import CsaScanner  # noqa: F401  # import 副作用：触发注册
 from .flawfinder import FlawfinderScanner  # noqa: F401  # import 副作用：触发注册
+from .infer import InferScanner  # noqa: F401  # import 副作用：触发注册
 from .models import Anchor
 from .sarif_parser import parse_sarif_to_anchors
 from .semgrep import SemgrepScanner  # noqa: F401  # import 副作用：触发注册

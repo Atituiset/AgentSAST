@@ -63,3 +63,12 @@ def test_scan_skips_compilation_scanner_without_compile_db(monkeypatch, tmp_path
     assert anchors == []
     assert called["n"] == 0  # 无 compile_db，编译期扫描器被跳过
     SCANNER_REGISTRY.pop("fake-compiler", None)
+
+
+def test_compilation_scanners_registered_via_scanner_import():
+    """Importing scanner.py must register all five scanners (incl. the three
+    compilation-line ones) — guards against the dispatch path silently missing them."""
+    import agentsast.layer1.scanner  # noqa: F401
+    from agentsast.layer1.base import SCANNER_REGISTRY
+    for key in ("semgrep", "flawfinder", "infer", "csa", "cppcheck"):
+        assert key in SCANNER_REGISTRY, f"scanner '{key}' not registered"

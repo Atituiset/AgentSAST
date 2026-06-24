@@ -153,6 +153,7 @@ def main(
         compile_db=Path(compile_db) if compile_db else None,
         compile_dir=Path(compile_dir) if compile_dir else None,
         build_cmd=build_cmd,
+        build_dir=Path(target).resolve(),
     )
 
     pipeline = Pipeline(

@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import re
 
-# 匹配 "assigned at line N" / "line N" 形式
-_ASSIGN_RE = re.compile(r"assigned(?:[^.]*?)line\s+(\d+)", re.IGNORECASE)
-_DEREF_RE = re.compile(r"deref\w*(?:[^.]*?)line\s+(\d+)", re.IGNORECASE)
+# 匹配 "assigned at line N" / "line N" 形式（DOTALL + 非捕获宽松间隔：消息可能含换行/路径的点）
+_ASSIGN_RE = re.compile(r"assigned(?:.*?)line\s+(\d+)", re.IGNORECASE | re.DOTALL)
+_DEREF_RE = re.compile(r"deref\w*(?:.*?)line\s+(\d+)", re.IGNORECASE | re.DOTALL)
 
 
 def extract_path_from_message(message: str) -> tuple[int | None, int | None]:
