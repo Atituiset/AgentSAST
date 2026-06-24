@@ -23,3 +23,14 @@ def test_register_scanner_adds_to_registry():
 
     assert "dummy-tool" in SCANNER_REGISTRY
     assert SCANNER_REGISTRY["dummy-tool"] is DummyScanner
+
+
+def test_semgrep_is_registered_and_protocol_compatible():
+    from agentsast.layer1.base import SCANNER_REGISTRY, ScanContext
+    from agentsast.layer1.semgrep import SemgrepScanner
+    assert "semgrep" in SCANNER_REGISTRY
+    scanner = SCANNER_REGISTRY["semgrep"](config="p/c")
+    assert scanner.name == "Semgrep"
+    assert scanner.requires_compilation is False
+    assert callable(scanner.is_available)
+    assert callable(scanner.scan)
