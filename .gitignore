@@ -13,6 +13,7 @@ venv/
 .ruff_cache/
 .pytest_cache/
 *.sarif
+!tests/fixtures/*.sarif
 *.json.bak
 node_modules/
 book/dist/
