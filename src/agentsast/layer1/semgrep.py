@@ -5,17 +5,24 @@ import logging
 import subprocess
 from pathlib import Path
 
+from .base import ScanContext, register_scanner
 from .models import Anchor, Location, Severity
 
 logger = logging.getLogger(__name__)
 
 
+@register_scanner("semgrep")
 class SemgrepScanner:
     NAME = "Semgrep"
+    requires_compilation = False
 
     def __init__(self, config: str = "p/c", timeout: int = 300):
         self.config = config
         self.timeout = timeout
+
+    @property
+    def name(self) -> str:
+        return self.NAME
 
     def is_available(self) -> bool:
         try:
@@ -29,7 +36,8 @@ class SemgrepScanner:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
-    def scan(self, target: Path) -> list[Anchor]:
+    def scan(self, ctx) -> list[Anchor]:
+        target = ctx.target if isinstance(ctx, ScanContext) else ctx
         if not self.is_available():
             logger.warning("Semgrep not found in PATH, skipping")
             return []

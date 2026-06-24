@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results version="2">
+  <cppcheck version="2.12.1"/>
+  <errors>
+    <error id="bufferAccessOutOfBounds" severity="error" msg="Buffer is accessed out of bounds." verbose="Buffer out of bounds at buf[64].">
+      <location file="main.c" line="8" column="9"/>
+    </error>
+  </errors>
+</results>

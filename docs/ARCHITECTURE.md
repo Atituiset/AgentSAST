@@ -84,6 +84,9 @@ agentsast /path/to/source --llm-model qwen2.5-72b
 
 **目标**：快速识别代码中所有可能的漏洞触发点（Sink），输出统一的 SARIF 格式。
 
+> 注：除上表中的免编译扫描器外，Infer / Clang Static Analyzer (CSA) / Cppcheck 现已作为**编译线扫描器**接入，统一走可插拔 `Scanner` 注册表（`--compile-db`/`--compile-dir`/`--build-cmd` 供应编译数据库后自动启用），其 SARIF/XML 报告经通用解析器 + 各工具 handler 还原 `source_location` 与 `dataflow_path`。
+> 注：Cppcheck 输出 XML（无 codeFlows），故直接 XML→Anchor 适配（`handlers/cppcheck.py`），未走通用 SARIF 解析层——这是有意的简化（spec §5.3 的统一 SARIF 原则对 Cppcheck 偏离，因其无路径数据）。
+
 #### 3.1.1 支持的扫描器
 
 | 扫描器 | 分析深度 | 需要编译 | 规则来源 | 降级策略 |
@@ -448,6 +451,7 @@ void safe_process_buffer(char* external_data, int size) {
 | 里程碑 | 内容 | 预估 |
 |--------|------|------|
 | **MVP (v0.1)** ✅ | Semgrep/Flawfinder + Tree-sitter 切片 + LLM 判断 | 已完成 |
+| **Layer1 编译线接入** ✅ | Infer/CSA/Cppcheck 编译线扫描器接入（SARIF/XML 解析 + 可插拔 Scanner 注册表，Plan 1） | 已完成 |
 | **v0.2** | CodeQL SARIF 接入 + Joern CPG 深度切片 | 2-3 周 |
 | **v0.3** | Clang 预处理管线（宏展开 + 精确类型） | 1-2 周 |
 | **v0.4** | 批量扫描 + 增量分析 + Git diff 模式 | 1 周 |
