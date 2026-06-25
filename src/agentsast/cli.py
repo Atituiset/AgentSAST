@@ -105,6 +105,8 @@ def _print_results(result: PipelineResult):
               help="Directory containing compile_commands.json (remote-synced)")
 @click.option("--build-cmd", default=None,
               help="Build command to generate compile_commands.json via Bear")
+@click.option("--l2-backend", type=click.Choice(["treesitter", "mcp-lsp"]),
+              default="treesitter", help="Layer2 program-understanding backend")
 @click.option("--llm-model", default="gpt-4o", help="LLM model name")
 @click.option(
     "--llm-api-key",
@@ -140,6 +142,7 @@ def main(
     compile_db: str | None,
     compile_dir: str | None,
     build_cmd: str | None,
+    l2_backend: str,
     llm_model: str,
     llm_api_key: str | None,
     llm_base_url: str | None,
@@ -165,6 +168,7 @@ def main(
         llm_base_url=llm_base_url,
         skip_llm=skip_llm,
         compile_db=compile_db_path,
+        l2_backend=l2_backend,
     )
 
     root = Path(project_root).resolve() if project_root else None
