@@ -143,6 +143,8 @@ src/agentsast/layer1/
 
 **目标**：为每个 Anchor 精准提取四个维度的上下文，消除无关代码噪声，为 LLM 提供高质量输入。
 
+> **可插拔程序理解后端**：Layer2 的 caller/callee 查找通过 `ProgramUnderstandingBackend` 协议抽象。默认为 **tree-sitter**（语法级，零依赖）；可选 **clangd via MCP** 语义级后端，经 `--l2-backend mcp-lsp` 启用（需 `pip install -e ".[layer2-mcp]"` + `mcp-language-server` 二进制 + `clangd` + `compile_commands`）。
+
 #### 3.2.1 切片维度
 
 | 维度 | 方向 | 说明 | 深度限制 |

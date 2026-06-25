@@ -85,8 +85,11 @@ class Pipeline:
             return result
 
         logger.info("=== Layer 2: Context Slicing ===")
+        from ..layer2.backend import ProgramUnderstandingBackend
         from ..layer2.treesitter_backend import TreeSitterBackend
-        backend = TreeSitterBackend(max_call_depth=self.max_call_depth)
+        backend: ProgramUnderstandingBackend = TreeSitterBackend(
+            max_call_depth=self.max_call_depth
+        )
         if self.l2_backend == "mcp-lsp":
             from ..layer2.mcp_lsp_backend import McpLspBackend
             backend = McpLspBackend(

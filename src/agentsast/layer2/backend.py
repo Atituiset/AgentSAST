@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from ..layer1.models import Location
@@ -24,7 +25,10 @@ class ProgramUnderstandingBackend(Protocol):
     """
 
     def find_callers(
-        self, func_name: str, loc: Location, project_root=None
+        self,
+        func_name: str,
+        loc: Location,
+        project_root: Path | None = None,
     ) -> list[FunctionRef]: ...
 
     def find_callees(self, func_name: str, loc: Location) -> list[FunctionRef]: ...
