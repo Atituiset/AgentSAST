@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentsast"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI-Augmented Static Analysis Tool for C/C++ — SAST anchoring + program slicing + LLM judgment"
 requires-python = ">=3.10"
 dependencies = [
