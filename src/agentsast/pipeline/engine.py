@@ -51,6 +51,7 @@ class Pipeline:
         llm_base_url: str | None = None,
         skip_llm: bool = False,
         compile_db: Path | None = None,
+        l2_backend: str = "treesitter",
     ):
         self.tools = tools or ["semgrep", "flawfinder"]
         self.semgrep_config = semgrep_config
@@ -60,6 +61,7 @@ class Pipeline:
         self.llm_api_key = llm_api_key
         self.llm_base_url = llm_base_url
         self.compile_db = compile_db
+        self.l2_backend = l2_backend
 
     def run(
         self,
@@ -83,7 +85,22 @@ class Pipeline:
             return result
 
         logger.info("=== Layer 2: Context Slicing ===")
-        engine = SlicingEngine(max_call_depth=self.max_call_depth)
+        from ..layer2.backend import ProgramUnderstandingBackend
+        from ..layer2.treesitter_backend import TreeSitterBackend
+        backend: ProgramUnderstandingBackend = TreeSitterBackend(
+            max_call_depth=self.max_call_depth
+        )
+        if self.l2_backend == "mcp-lsp":
+            from ..layer2.mcp_lsp_backend import McpLspBackend
+            backend = McpLspBackend(
+                workspace=target,
+                compile_commands_dir=(
+                    self.compile_db.parent if self.compile_db else None
+                ),
+            )
+        engine = SlicingEngine(
+            max_call_depth=self.max_call_depth, backend=backend
+        )
         sliced_anchors: list[tuple[Anchor, SlicingResult]] = []
         for anchor in anchors:
             try:

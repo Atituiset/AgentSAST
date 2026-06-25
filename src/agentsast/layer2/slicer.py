@@ -5,9 +5,10 @@ from pathlib import Path
 
 from tree_sitter import Node
 
-from ..layer1.models import Anchor
+from ..layer1.models import Anchor, Location
 from .models import CodeSlice, SlicingResult
 from .parser import ASTParser
+from .treesitter_backend import TreeSitterBackend
 
 logger = logging.getLogger(__name__)
 
@@ -79,35 +80,6 @@ def _extract_type_names_from_node(node: Node) -> set[str]:
     return types
 
 
-def _find_callers(root: Node, func_name: str) -> list[Node]:
-    callers: list[Node] = []
-    for node in _walk_tree(root):
-        if node.type == "function_definition":
-            body = node.child_by_field_name("body")
-            if body is None:
-                continue
-            for child in _walk_tree(body):
-                if child.type == "call_expression":
-                    func = child.child_by_field_name("function")
-                    if func and func.text.decode().strip() == func_name:
-                        callers.append(node)
-                        break
-    return callers
-
-
-def _find_callees(func_node: Node) -> list[tuple[str, Node]]:
-    callees: list[tuple[str, Node]] = []
-    body = func_node.child_by_field_name("body")
-    if not body:
-        return callees
-    for child in _walk_tree(body):
-        if child.type == "call_expression":
-            func = child.child_by_field_name("function")
-            if func:
-                callees.append((func.text.decode().strip(), child))
-    return callees
-
-
 def _backward_slice_var(
     node: Node, var_name: str, max_depth: int = 2
 ) -> list[Node]:
@@ -158,10 +130,14 @@ def _get_typedef_name(node: Node) -> str:
 
 
 class SlicingEngine:
-    def __init__(self, max_call_depth: int = 2):
+    def __init__(self, max_call_depth: int = 2, backend=None):
         self.parser = ASTParser()
         self.max_call_depth = max_call_depth
         self._file_cache: dict[Path, Node] = {}
+        if backend is not None:
+            self.backend = backend
+        else:
+            self.backend = TreeSitterBackend(max_call_depth=max_call_depth)
 
     def _get_ast(self, file_path: Path) -> Node | None:
         file_path = file_path.resolve()
@@ -333,66 +309,48 @@ class SlicingEngine:
         func_name = _get_function_name(func_node)
         if not func_name:
             return slices
-
-        caller_nodes = _find_callers(root, func_name)
-        for caller in caller_nodes:
-            if caller is not func_node:
-                label = f"caller_of:{func_name}"
-                slices.append(
-                    ASTParser.node_to_slice(
-                        file_path, caller, "caller", label
-                    )
-                )
-
-        if project_root and file_path != project_root:
-            search_dirs = (
-                [project_root]
-                if project_root.is_dir()
-                else [file_path.parent]
+        refs = self.backend.find_callers(
+            func_name,
+            Location(file=file_path, line=func_node.start_point[0] + 1),
+            project_root=project_root,
+        )
+        for ref in refs:
+            content = ASTParser.get_line_content(
+                ref.location.file, ref.location.line, ref.location.end_line
             )
-            for search_dir in search_dirs:
-                src_exts = (".c", ".cpp", ".cc", ".cxx", ".h", ".hpp")
-                for src_file in search_dir.rglob("*"):
-                    if (
-                        src_file.suffix.lower() in src_exts
-                        and src_file.resolve() != file_path.resolve()
-                    ):
-                        other_root = self._get_ast(src_file)
-                        if other_root:
-                            other_callers = _find_callers(
-                                other_root, func_name
-                            )
-                            for caller in other_callers:
-                                label = f"caller_of:{func_name}"
-                                slices.append(
-                                    ASTParser.node_to_slice(
-                                        src_file, caller, "caller", label
-                                    )
-                                )
-                            if len(slices) >= self.max_call_depth:
-                                break
-                if len(slices) >= self.max_call_depth:
-                    break
-
+            slices.append(
+                CodeSlice(
+                    file=ref.location.file,
+                    start_line=ref.location.line,
+                    end_line=ref.location.end_line,
+                    content=content,
+                    slice_type="caller",
+                    label=f"caller_of:{func_name}",
+                )
+            )
         return slices[: self.max_call_depth]
 
     def _extract_callees(
         self, file_path: Path, func_node: Node
     ) -> list[CodeSlice]:
         slices: list[CodeSlice] = []
-        callees = _find_callees(func_node)
-        for name, call_node in callees[:5]:
-            start = call_node.start_point[0] + 1
-            end = call_node.end_point[0] + 1
-            content = ASTParser.get_line_content(file_path, start, end)
+        func_name = _get_function_name(func_node)
+        refs = self.backend.find_callees(
+            func_name,
+            Location(file=file_path, line=func_node.start_point[0] + 1),
+        )
+        for ref in refs:
+            content = ASTParser.get_line_content(
+                ref.location.file, ref.location.line, ref.location.end_line
+            )
             slices.append(
                 CodeSlice(
-                    file=file_path,
-                    start_line=start,
-                    end_line=end,
+                    file=ref.location.file,
+                    start_line=ref.location.line,
+                    end_line=ref.location.end_line,
                     content=content,
                     slice_type="callee",
-                    label=f"callee:{name}",
+                    label=f"callee:{ref.name}",
                 )
             )
         return slices
