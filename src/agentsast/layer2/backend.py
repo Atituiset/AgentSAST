@@ -23,6 +23,8 @@ class ProgramUnderstandingBackend(Protocol):
     起止行(start_line/end_line)，供切片引擎读取函数源码片段。
     """
 
-    def find_callers(self, func_name: str, loc: Location, project_root=None) -> list[FunctionRef]: ...
+    def find_callers(
+        self, func_name: str, loc: Location, project_root=None
+    ) -> list[FunctionRef]: ...
 
     def find_callees(self, func_name: str, loc: Location) -> list[FunctionRef]: ...

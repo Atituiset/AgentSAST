@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agentsast.layer2.treesitter_backend import TreeSitterBackend
 from agentsast.layer1.models import Location
+from agentsast.layer2.treesitter_backend import TreeSitterBackend
 
 SAMPLES = Path(__file__).resolve().parent.parent.parent / "samples"
 VULN = SAMPLES / "vulnerable_server.c"
