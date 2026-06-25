@@ -18,7 +18,9 @@ def test_engine_builds_agent_backend_for_mcp_lsp_agent(monkeypatch, tmp_path):
     from agentsast.layer2.models import SlicingResult
 
     # mock Layer1 扫描返回 1 个 fake anchor，驱动 Layer2 backend 构造分支
-    fake_anchor = types.SimpleNamespace(file=tmp_path / "a.c", line=1)
+    fake_anchor = types.SimpleNamespace(
+        file=tmp_path / "a.c", line=1, to_dict=lambda: {"file": str(tmp_path / "a.c"), "line": 1}
+    )
     monkeypatch.setattr(eng, "layer1_scan", lambda *a, **k: [fake_anchor])
 
     constructed: list[str] = []
@@ -29,7 +31,11 @@ def test_engine_builds_agent_backend_for_mcp_lsp_agent(monkeypatch, tmp_path):
 
         def slice_anchor(self, anchor, project_root=None):
             return SlicingResult(
-                struct_defs=[], dataflow_slices=[], caller_slices=[]
+                anchor_file=tmp_path / "a.c",
+                anchor_line=1,
+                struct_defs=[],
+                dataflow_slices=[],
+                caller_slices=[],
             )
 
     monkeypatch.setattr(eng, "SlicingEngine", SpyEngine)
