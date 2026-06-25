@@ -2,10 +2,7 @@
 """AgentBackend 测试：mock LLM client 与 McpLspConnection，不依赖真实 LLM/clangd。"""
 from __future__ import annotations
 
-import json
-import types
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from agentsast.layer1.models import Location
 
