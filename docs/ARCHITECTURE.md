@@ -143,7 +143,7 @@ src/agentsast/layer1/
 
 **目标**：为每个 Anchor 精准提取四个维度的上下文，消除无关代码噪声，为 LLM 提供高质量输入。
 
-> **可插拔程序理解后端**：Layer2 的 caller/callee 查找通过 `ProgramUnderstandingBackend` 协议抽象。默认为 **tree-sitter**（语法级，零依赖）；可选 **clangd via MCP** 语义级后端，经 `--l2-backend mcp-lsp` 启用（需 `pip install -e ".[layer2-mcp]"` + `mcp-language-server` 二进制 + `clangd` + `compile_commands`）。
+> **可插拔程序理解后端**：Layer2 的 caller/callee 查找通过 `ProgramUnderstandingBackend` 协议抽象。默认为 **tree-sitter**（语法级，零依赖）；可选 **clangd via MCP** 语义级后端，经 `--l2-backend mcp-lsp` 启用（需 `pip install -e ".[layer2-mcp]"` + `mcp-language-server` 二进制 + `clangd` + `compile_commands`）。另有 **`mcp-lsp-agent`** 档：在 mcp-lsp 基础上叠加 LLM tool-calling loop（复用 `--llm-*` 配置），由模型自主调度 callers/callees/definition/read_source 工具，提升复杂路径召回；LLM 不可用或失败时自动退化到程序化 mcp-lsp 行为。
 
 #### 3.2.1 切片维度
 
