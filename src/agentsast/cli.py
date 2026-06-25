@@ -105,8 +105,12 @@ def _print_results(result: PipelineResult):
               help="Directory containing compile_commands.json (remote-synced)")
 @click.option("--build-cmd", default=None,
               help="Build command to generate compile_commands.json via Bear")
-@click.option("--l2-backend", type=click.Choice(["treesitter", "mcp-lsp"]),
-              default="treesitter", help="Layer2 program-understanding backend")
+@click.option(
+    "--l2-backend",
+    type=click.Choice(["treesitter", "mcp-lsp", "mcp-lsp-agent"]),
+    default="treesitter",
+    help="Layer2 program-understanding backend",
+)
 @click.option("--llm-model", default="gpt-4o", help="LLM model name")
 @click.option(
     "--llm-api-key",

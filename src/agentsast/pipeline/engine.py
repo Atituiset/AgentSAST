@@ -98,6 +98,18 @@ class Pipeline:
                     self.compile_db.parent if self.compile_db else None
                 ),
             )
+        elif self.l2_backend == "mcp-lsp-agent":
+            from ..layer2.agent_backend import AgentBackend
+            backend = AgentBackend(
+                workspace=target,
+                compile_commands_dir=(
+                    self.compile_db.parent if self.compile_db else None
+                ),
+                llm_model=self.llm_model,
+                llm_api_key=self.llm_api_key,
+                llm_base_url=self.llm_base_url,
+                skip_llm=self.skip_llm,
+            )
         engine = SlicingEngine(
             max_call_depth=self.max_call_depth, backend=backend
         )
