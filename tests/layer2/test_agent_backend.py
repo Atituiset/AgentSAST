@@ -125,3 +125,60 @@ def test_tool_exception_self_corrects(monkeypatch):
     monkeypatch.setattr(b._conn, "call_tool", boom)
     # 不应抛出，agent 收到错误后正常返回 []
     assert b.find_callers("x", _loc()) == []
+
+
+def test_fallback_on_llm_error(monkeypatch):
+    # LLM create 抛异常 → fallback 到程序化 direct
+    from agentsast.layer2 import _mcp_client as mcpmod
+    from agentsast.layer2.agent_backend import AgentBackend
+
+    monkeypatch.setattr(mcpmod, "IS_AVAILABLE", True)
+    b = AgentBackend(llm_api_key="sk-test")
+    b._client.chat.completions.create = MagicMock(side_effect=RuntimeError("503"))
+    monkeypatch.setattr(
+        b._direct._conn,
+        "call_tool",
+        lambda tool, args: "caller_a\n  /src/main.c:18:1",
+    )
+    refs = b.find_callers("process_buffer", _loc())
+    assert [r.name for r in refs] == ["caller_a"]  # 来自 fallback direct
+
+
+def test_fallback_on_max_iters(monkeypatch):
+    # LLM 每轮都只调工具、永不收敛 → 触顶 max_iters → fallback
+    from agentsast.layer2 import _mcp_client as mcpmod
+    from agentsast.layer2.agent_backend import AgentBackend
+
+    monkeypatch.setattr(mcpmod, "IS_AVAILABLE", True)
+    b = AgentBackend(llm_api_key="sk-test", max_iters=2)
+    loop_resp = _resp(
+        tool_calls=[
+            _tc("callers", {"symbolName": "x", "filePath": "/a.c",
+                             "line": 1, "column": 1})
+        ]
+    )
+    b._client.chat.completions.create = MagicMock(return_value=loop_resp)
+    monkeypatch.setattr(
+        b._direct._conn,
+        "call_tool",
+        lambda tool, args: "caller_b\n  /a.c:5:1",
+    )
+    refs = b.find_callers("x", _loc())
+    assert [r.name for r in refs] == ["caller_b"]
+
+
+def test_fallback_on_parse_failure(monkeypatch):
+    # LLM 最终返回非 JSON → fallback
+    from agentsast.layer2 import _mcp_client as mcpmod
+    from agentsast.layer2.agent_backend import AgentBackend
+
+    monkeypatch.setattr(mcpmod, "IS_AVAILABLE", True)
+    b = AgentBackend(llm_api_key="sk-test")
+    b._client.chat.completions.create = MagicMock(return_value=_resp(content="不是 JSON"))
+    monkeypatch.setattr(
+        b._direct._conn,
+        "call_tool",
+        lambda tool, args: "caller_c\n  /a.c:9:1",
+    )
+    refs = b.find_callers("x", _loc())
+    assert [r.name for r in refs] == ["caller_c"]

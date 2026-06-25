@@ -120,7 +120,13 @@ class AgentBackend:
             return []
         if self._skip_llm:
             return self._direct.find_callers(func_name, loc, project_root)
-        return self._agent_query("callers", func_name, loc)
+        try:
+            return self._agent_query("callers", func_name, loc)
+        except Exception:
+            logger.exception(
+                "AgentBackend.find_callers failed, falling back to programmatic"
+            )
+            return self._direct.find_callers(func_name, loc, project_root)
 
     def find_callees(self, func_name, loc: Location) -> list[FunctionRef]:
         if not self.is_available():
@@ -128,7 +134,13 @@ class AgentBackend:
             return []
         if self._skip_llm:
             return self._direct.find_callees(func_name, loc)
-        return self._agent_query("callees", func_name, loc)
+        try:
+            return self._agent_query("callees", func_name, loc)
+        except Exception:
+            logger.exception(
+                "AgentBackend.find_callees failed, falling back to programmatic"
+            )
+            return self._direct.find_callees(func_name, loc)
 
     def _agent_query(
         self, query_kind: str, func_name: str, loc: Location
