@@ -6,7 +6,6 @@ from pathlib import Path
 from tree_sitter import Node
 
 from ..layer1.models import Anchor, Location
-from .backend import FunctionRef
 from .models import CodeSlice, SlicingResult
 from .parser import ASTParser
 from .treesitter_backend import TreeSitterBackend
@@ -135,7 +134,10 @@ class SlicingEngine:
         self.parser = ASTParser()
         self.max_call_depth = max_call_depth
         self._file_cache: dict[Path, Node] = {}
-        self.backend = backend if backend is not None else TreeSitterBackend(max_call_depth=max_call_depth)
+        if backend is not None:
+            self.backend = backend
+        else:
+            self.backend = TreeSitterBackend(max_call_depth=max_call_depth)
 
     def _get_ast(self, file_path: Path) -> Node | None:
         file_path = file_path.resolve()
