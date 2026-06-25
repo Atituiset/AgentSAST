@@ -3,7 +3,8 @@
 提供语义级 caller/callee。mcp 为可选依赖；未安装时 is_available() 返回 False。
 
 AgentSAST 是同步 CLI，MCP 是 async，故 _call_tool_async 为内部 async 方法，
-公开方法用 asyncio.run 包装（每次调用建立新 session；MVP 可接受，mcp-lsp 非高频）。"""
+公开方法用 asyncio.run 包装；若已在 event loop 内则回退到 run_coroutine_threadsafe（独立线程），
+避免 RuntimeError。"""
 from __future__ import annotations
 
 import asyncio
@@ -69,7 +70,21 @@ class McpLspBackend:
         return "\n".join(texts)
 
     def _call_tool(self, tool: str, args: dict) -> str:
-        return asyncio.run(self._call_tool_async(tool, args))
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self._call_tool_async(tool, args))
+        # 已在 event loop 内（如 async 框架/notebook）：用独立线程跑协程，避免阻塞 loop
+        return asyncio.run_coroutine_threadsafe(
+            self._call_tool_async(tool, args), loop
+        ).result()
+
+    def _guard(self) -> bool:
+        """可用性闸门：不可用时 warn 并返回 False。"""
+        if not self.is_available():
+            logger.warning("McpLspBackend unavailable (mcp SDK not installed)")
+            return False
+        return True
 
     @staticmethod
     def _parse_refs(text: str, default_name: str) -> list[FunctionRef]:
@@ -102,8 +117,7 @@ class McpLspBackend:
         return refs
 
     def find_callers(self, func_name, loc, project_root=None) -> list[FunctionRef]:
-        if not self.is_available():
-            logger.warning("McpLspBackend unavailable (mcp SDK not installed)")
+        if not self._guard():
             return []
         try:
             text = self._call_tool("callers", {
@@ -116,7 +130,7 @@ class McpLspBackend:
         return self._parse_refs(text, default_name=func_name)
 
     def find_callees(self, func_name, loc) -> list[FunctionRef]:
-        if not self.is_available():
+        if not self._guard():
             return []
         try:
             text = self._call_tool("callees", {
