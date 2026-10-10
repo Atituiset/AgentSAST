@@ -16,4 +16,5 @@ venv/
 !tests/fixtures/*.sarif
 *.json.bak
 node_modules/
-book/dist/
+docs-vitepress/.vitepress/dist
+docs-vitepress/.vitepress/cache
